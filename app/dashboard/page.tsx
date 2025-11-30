@@ -34,6 +34,16 @@ type Transaction = {
   };
 };
 
+type SummaryResponse = {
+  totalSpent: number;
+  totalIncome: number;
+  largestExpense: number;
+  largestIncome: number;
+  spendCount: number;
+  incomeCount: number;
+  categoryTotals: Record<string, number>;
+};
+
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -97,6 +107,11 @@ export default function DashboardPage() {
   const [showAccountsPanel, setShowAccountsPanel] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0]);
+  const [summaryData, setSummaryData] = useState<SummaryResponse | null>(
+    null,
+  );
+  const [isLoadingSummary, setIsLoadingSummary] = useState(true);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
 
   useEffect(() => {
     let ignore = false;
@@ -193,6 +208,51 @@ export default function DashboardPage() {
   ]);
 
   useEffect(() => {
+    let ignore = false;
+    setIsLoadingSummary(true);
+    setSummaryError(null);
+    setSummaryData(null);
+
+    (async () => {
+      try {
+        const params = new URLSearchParams();
+        if (selectedAccount !== "all") {
+          params.set("accountId", selectedAccount);
+        }
+        params.set("startDate", dateRange.start);
+        params.set("endDate", dateRange.end);
+
+        const response = await fetch(
+          `/api/transactions/summary?${params.toString()}`,
+        );
+        const payload = await response.json();
+        if (!response.ok) {
+          throw new Error(payload?.error ?? "Unable to load summary");
+        }
+        if (!ignore) {
+          setSummaryData(payload);
+        }
+      } catch (error) {
+        if (!ignore) {
+          setSummaryError(
+            error instanceof Error
+              ? error.message
+              : "Failed to fetch spending summary",
+          );
+        }
+      } finally {
+        if (!ignore) {
+          setIsLoadingSummary(false);
+        }
+      }
+    })();
+
+    return () => {
+      ignore = true;
+    };
+  }, [selectedAccount, dateRange.start, dateRange.end, refreshKey]);
+
+  useEffect(() => {
     setCurrentPage(0);
     setSelectedTransactionIds(new Set());
   }, [selectedAccount, dateRange.start, dateRange.end, pageSize]);
@@ -225,38 +285,6 @@ export default function DashboardPage() {
       setIsSyncing(false);
     }
   };
-
-  const spendingTransactions = useMemo(
-    () => transactions.filter((tx) => tx.amount < 0),
-    [transactions],
-  );
-
-  const totalSpent = useMemo(
-    () =>
-      spendingTransactions.reduce(
-        (sum, tx) => sum + Math.abs(tx.amount),
-        0,
-      ),
-    [spendingTransactions],
-  );
-
-  const categoryTotals = useMemo(() => {
-    return spendingTransactions.reduce<Record<string, number>>(
-      (collector, tx) => {
-        const label = tx.category?.[0] ?? "Uncategorized";
-        collector[label] = (collector[label] ?? 0) + Math.abs(tx.amount);
-        return collector;
-      },
-      {},
-    );
-  }, [spendingTransactions]);
-
-  const sortedCategories = useMemo(() => {
-    return Object.entries(categoryTotals).sort((a, b) => b[1] - a[1]);
-  }, [categoryTotals]);
-
-  const topCategories = sortedCategories.slice(0, 3);
-  const maxCategoryValue = (topCategories[0]?.[1] ?? totalSpent) || 1;
 
   const totalPages =
     totalTransactions === 0
@@ -292,6 +320,76 @@ export default function DashboardPage() {
     () => selectionIncome.reduce((sum, tx) => sum + tx.amount, 0),
     [selectionIncome],
   );
+  const selectedLargestExpense = useMemo(() => {
+    if (selectionSpending.length === 0) return 0;
+    return Math.max(...selectionSpending.map((tx) => Math.abs(tx.amount)));
+  }, [selectionSpending]);
+  const selectedLargestIncome = useMemo(() => {
+    if (selectionIncome.length === 0) return 0;
+    return Math.max(...selectionIncome.map((tx) => tx.amount));
+  }, [selectionIncome]);
+  const selectionSpendCount = selectionSpending.length;
+  const selectionIncomeCount = selectionIncome.length;
+  const summarySpentTotal = summaryData?.totalSpent ?? 0;
+  const summaryIncomeTotal = summaryData?.totalIncome ?? 0;
+  const summaryLargestExpense = summaryData?.largestExpense ?? 0;
+  const summaryLargestIncome = summaryData?.largestIncome ?? 0;
+  const summarySpendCount = summaryData?.spendCount ?? 0;
+  const summaryIncomeCount = summaryData?.incomeCount ?? 0;
+  const activeSpentTotal = hasSelection ? selectionSpentTotal : summarySpentTotal;
+  const activeIncomeTotal = hasSelection ? selectionIncomeTotal : summaryIncomeTotal;
+  const activeLargestExpense = hasSelection
+    ? selectedLargestExpense
+    : summaryLargestExpense;
+  const activeLargestIncome = hasSelection
+    ? selectedLargestIncome
+    : summaryLargestIncome;
+  const activeSpendCount = hasSelection ? selectionSpendCount : summarySpendCount;
+  const activeIncomeCount = hasSelection ? selectionIncomeCount : summaryIncomeCount;
+  const selectionCategoryTotals = useMemo(() => {
+    return selectionSpending.reduce<Record<string, number>>((collector, tx) => {
+      const label = tx.category?.[0] ?? "Uncategorized";
+      collector[label] = (collector[label] ?? 0) + Math.abs(tx.amount);
+      return collector;
+    }, {});
+  }, [selectionSpending]);
+  const selectionTopCategories = useMemo(() => {
+    return Object.entries(selectionCategoryTotals)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3);
+  }, [selectionCategoryTotals]);
+  const selectionCategoryMaxValue =
+    (selectionTopCategories[0]?.[1] ?? selectionSpentTotal) ||
+    selectionSpentTotal ||
+    1;
+  const summaryCategoryEntries = useMemo(() => {
+    if (!summaryData) {
+      return [];
+    }
+    return Object.entries(summaryData.categoryTotals).sort((a, b) => b[1] - a[1]);
+  }, [summaryData]);
+  const summaryTopCategories = summaryCategoryEntries.slice(0, 3);
+  const summaryCategoryMaxValue =
+    (summaryTopCategories[0]?.[1] ?? summarySpentTotal) ||
+    summarySpentTotal ||
+    1;
+  const categoriesToShow = hasSelection
+    ? selectionTopCategories
+    : summaryTopCategories;
+  const categoriesMaxValue = hasSelection
+    ? selectionCategoryMaxValue
+    : summaryCategoryMaxValue;
+  const summaryRowsLabel = hasSelection
+    ? `${selection.length} selected rows`
+    : isLoadingSummary
+      ? "Loading summary…"
+      : "All rows in this range";
+  const summaryErrorText = !hasSelection ? summaryError : null;
+  const categoryEmptyMessage = hasSelection
+    ? "No spending data in selected rows yet."
+    : isLoadingSummary
+      ? "Loading categories…"
+      : "No spending data in this range yet.";
   const startDateObj = useMemo(
     () => new Date(dateRange.start),
     [dateRange.start],
@@ -310,40 +408,28 @@ export default function DashboardPage() {
   }, [startDateObj, endDateObj]);
   const spendingPerPeriod = {
     day:
-      periodCounts.day > 0 ? selectionSpentTotal / periodCounts.day : 0,
+      periodCounts.day > 0 ? activeSpentTotal / periodCounts.day : 0,
     week:
-      periodCounts.week > 0 ? selectionSpentTotal / periodCounts.week : 0,
+      periodCounts.week > 0 ? activeSpentTotal / periodCounts.week : 0,
     month:
       periodCounts.month > 0
-        ? selectionSpentTotal / periodCounts.month
+        ? activeSpentTotal / periodCounts.month
         : 0,
     year:
-      periodCounts.year > 0 ? selectionSpentTotal / periodCounts.year : 0,
+      periodCounts.year > 0 ? activeSpentTotal / periodCounts.year : 0,
   };
   const incomePerPeriod = {
     day:
-      periodCounts.day > 0 ? selectionIncomeTotal / periodCounts.day : 0,
+      periodCounts.day > 0 ? activeIncomeTotal / periodCounts.day : 0,
     week:
-      periodCounts.week > 0 ? selectionIncomeTotal / periodCounts.week : 0,
+      periodCounts.week > 0 ? activeIncomeTotal / periodCounts.week : 0,
     month:
       periodCounts.month > 0
-        ? selectionIncomeTotal / periodCounts.month
+        ? activeIncomeTotal / periodCounts.month
         : 0,
     year:
-      periodCounts.year > 0 ? selectionIncomeTotal / periodCounts.year : 0,
+      periodCounts.year > 0 ? activeIncomeTotal / periodCounts.year : 0,
   };
-  const largestExpense = useMemo(() => {
-    if (selectionSpending.length === 0) return 0;
-    return Math.max(
-      ...selectionSpending.map((tx) => Math.abs(tx.amount)),
-    );
-  }, [selectionSpending]);
-  const largestIncome = useMemo(() => {
-    if (selectionIncome.length === 0) return 0;
-    return Math.max(...selectionIncome.map((tx) => tx.amount));
-  }, [selectionIncome]);
-  const spendCount = selectionSpending.length;
-  const incomeCount = selectionIncome.length;
 
   const isAllVisibleSelected =
     transactions.length > 0 &&
@@ -401,17 +487,15 @@ export default function DashboardPage() {
         <section className="flex flex-col gap-4 xl:flex-row xl:items-start">
           <div className="flex min-w-0 flex-[0.85] flex-col gap-4">
             <div className="flex flex-1 flex-col rounded-3xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-900/5">
-              <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-                <div>
-                  <h2 className="text-lg font-semibold text-slate-900">
-                    Transactions
-                  </h2>
-                </div>
+              <div className="flex flex-col gap-3">
+                <h2 className="text-lg font-semibold text-slate-900">
+                  Transactions
+                </h2>
                 <div className="grid w-full gap-3 text-[0.55rem] uppercase tracking-[0.3em] text-slate-500 sm:grid-cols-2 lg:grid-cols-4">
                   <label className="flex flex-col gap-1">
                     Account
                     <select
-                      className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-slate-400"
+                      className="h-8 w-full rounded-sm border border-slate-200 bg-white px-2 text-xs text-slate-700 outline-none focus:border-slate-400"
                       value={selectedAccount}
                       onChange={(event) =>
                         setSelectedAccount(event.target.value)
@@ -429,7 +513,7 @@ export default function DashboardPage() {
                     From
                     <input
                       type="date"
-                      className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-slate-400"
+                      className="h-8 w-full rounded-sm border border-slate-200 bg-white px-2 text-xs text-slate-700 outline-none focus:border-slate-400"
                       value={dateRange.start}
                       onChange={(event) =>
                         setDateRange((prev) => ({
@@ -443,7 +527,7 @@ export default function DashboardPage() {
                     To
                     <input
                       type="date"
-                      className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-slate-400"
+                      className="h-8 w-full rounded-sm border border-slate-200 bg-white px-2 text-xs text-slate-700 outline-none focus:border-slate-400"
                       value={dateRange.end}
                       onChange={(event) =>
                         setDateRange((prev) => ({
@@ -456,7 +540,7 @@ export default function DashboardPage() {
                   <label className="flex flex-col gap-1">
                     Rows
                     <select
-                      className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-slate-400"
+                      className="h-8 w-full rounded-sm border border-slate-200 bg-white px-2 text-xs text-slate-700 outline-none focus:border-slate-400"
                       value={pageSize}
                       onChange={(event) => {
                         setPageSize(Number(event.target.value));
@@ -628,11 +712,16 @@ export default function DashboardPage() {
                   Spending summary
                 </p>
                 <p className="text-lg font-semibold text-slate-900">
-                  {formatCurrency(selectionSpentTotal)}
+                  {formatCurrency(activeSpentTotal)}
                 </p>
                 <p className="text-[0.75rem] text-slate-500">
-                  {hasSelection ? `${selection.length} selected rows` : "All rows on this page"}
+                  {summaryRowsLabel}
                 </p>
+                {summaryErrorText && (
+                  <p className="text-[0.65rem] text-red-600">
+                    {summaryErrorText}
+                  </p>
+                )}
                 <p className="text-[0.7rem] text-slate-400">
                   {dateRange.start} → {dateRange.end}
                 </p>
@@ -641,27 +730,27 @@ export default function DashboardPage() {
                 {[
                   {
                     label: "Net cashflow",
-                    value: selectionIncomeTotal - selectionSpentTotal,
+                    value: activeIncomeTotal - activeSpentTotal,
                     tone: "text-slate-900",
                   },
                   {
                     label: "Total inflow",
-                    value: selectionIncomeTotal,
+                    value: activeIncomeTotal,
                     tone: "text-emerald-600",
                   },
                   {
                     label: "Total spent",
-                    value: selectionSpentTotal,
+                    value: activeSpentTotal,
                     tone: "text-red-600",
                   },
                   {
                     label: "Largest expense",
-                    value: largestExpense,
+                    value: activeLargestExpense,
                     tone: "text-red-600",
                   },
                   {
                     label: "Largest inflow",
-                    value: largestIncome,
+                    value: activeLargestIncome,
                     tone: "text-emerald-600",
                   },
                 ].map((row) => (
@@ -679,7 +768,7 @@ export default function DashboardPage() {
                     Transactions
                   </dt>
                   <dd className="font-semibold text-slate-900">
-                    {spendCount} spend · {incomeCount} inflow
+                    {activeSpendCount} spend · {activeIncomeCount} inflow
                   </dd>
                 </div>
               </dl>
@@ -721,12 +810,12 @@ export default function DashboardPage() {
                 Top categories
               </p>
               <div className="mt-4 space-y-4">
-                {topCategories.length === 0 ? (
+                {categoriesToShow.length === 0 ? (
                   <p className="text-sm text-slate-500">
-                    No spending data in this range yet.
+                    {categoryEmptyMessage}
                   </p>
                 ) : (
-                  topCategories.map(([label, value]) => (
+                  categoriesToShow.map(([label, value]) => (
                     <div key={label}>
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-slate-800">{label}</span>
@@ -738,7 +827,7 @@ export default function DashboardPage() {
                         <div
                           className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400"
                           style={{
-                            width: `${(value / maxCategoryValue) * 100}%`,
+                            width: `${(value / categoriesMaxValue) * 100}%`,
                           }}
                         />
                       </div>
