@@ -1,0 +1,65 @@
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String     @id @default(cuid())
+  email     String?    @unique
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  items     BankItem[]
+}
+
+model BankItem {
+  id              String    @id @default(cuid())
+  user            User      @relation(fields: [userId], references: [id])
+  userId          String
+  plaidItemId     String    @unique
+  institutionId   String?
+  institutionName String?
+  accessToken     String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  accounts        Account[]
+}
+
+model Account {
+  id              String      @id @default(cuid())
+  bankItem        BankItem    @relation(fields: [bankItemId], references: [id])
+  bankItemId      String
+  plaidAccountId  String      @unique
+  name            String
+  officialName    String?
+  mask            String?
+  type            String
+  subtype         String?
+  currency        String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  transactions    Transaction[]
+}
+
+model Transaction {
+  id                 String    @id @default(cuid())
+  account            Account   @relation(fields: [accountId], references: [id])
+  accountId          String
+  plaidTransactionId String    @unique
+  date               DateTime
+  name               String
+  merchantName       String?
+  amount             Decimal
+  isoCurrencyCode    String?
+  pending            Boolean
+  category           String[]
+  raw                Json?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
