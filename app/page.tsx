@@ -25,7 +25,7 @@ export default function HomePage() {
           <div className="mt-8 flex flex-wrap gap-3">
             <Link
               href="/connect"
-              className="inline-flex items-center justify-center rounded-full bg-primary px-6 py-3 text-white transition hover:bg-primary/90"
+              className="inline-flex items-center justify-center rounded-full bg-primary px-6 py-3 text-black transition hover:bg-primary/90"
             >
               Connect your bank
             </Link>
