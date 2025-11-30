@@ -2,9 +2,15 @@ import { jsonErrorResponse } from "@/lib/api-response";
 import { DEMO_USER_ID } from "@/lib/demo-user";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { authorizeRequest } from "@/lib/family-auth";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const auth = authorizeRequest(request);
+    if (!auth.ok) {
+      return auth.response;
+    }
+
     const accounts = await prisma.account.findMany({
       where: {
         bankItem: {

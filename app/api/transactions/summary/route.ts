@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { jsonErrorResponse } from "@/lib/api-response";
 import { DEMO_USER_ID } from "@/lib/demo-user";
 import { prisma } from "@/lib/prisma";
+import { authorizeRequest } from "@/lib/family-auth";
 
 type TransactionFindManyArgs = NonNullable<
   Parameters<typeof prisma.transaction.findMany>[0]
@@ -23,6 +24,11 @@ type SummaryResponse = {
 
 export async function GET(request: Request) {
   try {
+    const auth = authorizeRequest(request);
+    if (!auth.ok) {
+      return auth.response;
+    }
+
     const url = new URL(request.url);
     const accountId = url.searchParams.get("accountId");
     const startDate = url.searchParams.get("startDate");
@@ -36,7 +42,21 @@ export async function GET(request: Request) {
       },
     };
 
-    if (accountId) {
+    if (accountId && accountId !== "all") {
+      const validatedAccount = await prisma.account.findFirst({
+        where: {
+          id: accountId,
+          bankItem: {
+            userId: DEMO_USER_ID,
+          },
+        },
+      });
+      if (!validatedAccount) {
+        return NextResponse.json(
+          { error: "Account filter not found" },
+          { status: 400 },
+        );
+      }
       where.accountId = accountId;
     }
 

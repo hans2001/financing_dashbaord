@@ -3,6 +3,7 @@ import { DEMO_USER_ID } from "@/lib/demo-user";
 import { prisma } from "@/lib/prisma";
 import { plaidClient } from "@/lib/plaid";
 import { NextResponse } from "next/server";
+import { authorizeRequest } from "@/lib/family-auth";
 
 const DEFAULT_LOOKBACK_DAYS = 90;
 
@@ -12,6 +13,11 @@ function formatShortDate(date: Date) {
 
 export async function POST(request: Request) {
   try {
+    const auth = authorizeRequest(request);
+    if (!auth.ok) {
+      return auth.response;
+    }
+
     const payload =
       (await request.json().catch(() => ({}))) as {
         bankItemId?: string;

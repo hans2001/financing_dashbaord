@@ -9,3 +9,6 @@
 - [ ] Add a monthly trend line chart (date → spent) so momentum can be tracked without exporting data.
 - [ ] Show a pie chart of spending by category to highlight where money is going at a glance.
 - [ ] Include a description column on each transaction row to surface notes or context directly in the table.
+- [ ] Protect `api/*` routes with at least a lightweight token/session so Plaid secrets aren’t freely callable in production.
+- [ ] Add input validation/ownership checks for the transaction APIs before expanding beyond the demo user to prevent accidental data leaks.
+- [ ] Introduce request throttling or caching on `/api/transactions` if the dashboard ends up exposed to larger traffic to avoid overloading Postgres.

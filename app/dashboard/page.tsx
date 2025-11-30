@@ -55,6 +55,13 @@ const formatIsoDate = (date: Date) => date.toISOString().split("T")[0];
 const today = new Date();
 const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 const PAGE_SIZE_OPTIONS = [25, 50, 100];
+const FAMILY_AUTH_HEADER = "x-family-secret";
+const FAMILY_AUTH_SECRET =
+  process.env.NEXT_PUBLIC_FAMILY_AUTH_TOKEN ??
+  "family-dashboard-secret";
+const FAMILY_AUTH_HEADERS = {
+  [FAMILY_AUTH_HEADER]: FAMILY_AUTH_SECRET,
+};
 
 type SummaryPeriod = "day" | "week" | "month" | "year";
 
@@ -120,7 +127,9 @@ export default function DashboardPage() {
 
     (async () => {
       try {
-        const response = await fetch("/api/accounts");
+        const response = await fetch("/api/accounts", {
+          headers: FAMILY_AUTH_HEADERS,
+        });
         const payload = await response.json();
         if (!response.ok) {
           throw new Error(payload?.error ?? "Unable to load accounts");
@@ -162,7 +171,9 @@ export default function DashboardPage() {
         params.set("endDate", dateRange.end);
         params.set("offset", (currentPage * pageSize).toString());
 
-        const response = await fetch(`/api/transactions?${params.toString()}`);
+        const response = await fetch(`/api/transactions?${params.toString()}`, {
+          headers: FAMILY_AUTH_HEADERS,
+        });
         const payload = await response.json();
         if (!response.ok) {
           throw new Error(payload?.error ?? "Unable to load transactions");
@@ -224,6 +235,9 @@ export default function DashboardPage() {
 
         const response = await fetch(
           `/api/transactions/summary?${params.toString()}`,
+          {
+            headers: FAMILY_AUTH_HEADERS,
+          },
         );
         const payload = await response.json();
         if (!response.ok) {
@@ -264,6 +278,7 @@ export default function DashboardPage() {
       const response = await fetch("/api/transactions/sync", {
         method: "POST",
         headers: {
+          ...FAMILY_AUTH_HEADERS,
           "Content-Type": "application/json",
         },
       });
