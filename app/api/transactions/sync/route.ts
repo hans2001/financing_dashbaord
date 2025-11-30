@@ -82,6 +82,8 @@ export async function POST(request: Request) {
           summary.inserted += 1;
         }
 
+        const normalizedTx = JSON.parse(JSON.stringify(tx));
+
         await prisma.transaction.upsert({
           where: { plaidTransactionId: tx.transaction_id },
           update: {
@@ -93,7 +95,7 @@ export async function POST(request: Request) {
             merchantName: tx.merchant_name ?? null,
             name: tx.name,
             pending: tx.pending,
-            raw: tx,
+            raw: normalizedTx,
           },
           create: {
             accountId: account.id,
@@ -105,7 +107,7 @@ export async function POST(request: Request) {
             merchantName: tx.merchant_name ?? null,
             name: tx.name,
             pending: tx.pending,
-            raw: tx,
+            raw: normalizedTx,
           },
         });
       }

@@ -1,8 +1,22 @@
-import { Prisma } from "@prisma/client";
 import { jsonErrorResponse } from "@/lib/api-response";
 import { DEMO_USER_ID } from "@/lib/demo-user";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+
+type TransactionFindManyArgs = NonNullable<
+  Parameters<typeof prisma.transaction.findMany>[0]
+>;
+type TransactionWhereInput = NonNullable<TransactionFindManyArgs["where"]>;
+type TransactionRecord = Awaited<
+  ReturnType<typeof prisma.transaction.findMany>
+>[number] & {
+  account: {
+    name: string;
+    bankItem: {
+      institutionName?: string | null;
+    };
+  };
+};
 
 const MAX_PAGE_SIZE = 1000;
 
@@ -18,7 +32,7 @@ export async function GET(request: Request) {
     const limit = Math.min(Math.max(limitParam, 1), MAX_PAGE_SIZE);
     const offset = Math.max(offsetParam, 0);
 
-    const where: Prisma.TransactionWhereInput = {
+    const where: TransactionWhereInput = {
       account: {
         bankItem: {
           userId: DEMO_USER_ID,
@@ -61,7 +75,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       total,
-      transactions: transactions.map((transaction) => {
+      transactions: transactions.map((transaction: TransactionRecord) => {
         const categoryPath =
           (transaction.category ?? []).filter(Boolean).join(" > ") ||
           "Uncategorized";
@@ -87,8 +101,14 @@ export async function GET(request: Request) {
           pending: transaction.pending,
           status: transaction.pending ? "pending" : "posted",
           isoCurrencyCode: transaction.isoCurrencyCode ?? "USD",
-          location: transaction.raw?.location ?? null,
-          paymentMeta: transaction.raw?.payment_meta ?? null,
+          location:
+            rawData && typeof rawData === "object" && "location" in rawData
+              ? (rawData.location as Record<string, unknown>)
+              : null,
+          paymentMeta:
+            rawData && typeof rawData === "object" && "payment_meta" in rawData
+              ? (rawData.payment_meta as Record<string, unknown>)
+              : null,
           institutionName:
             transaction.account.bankItem.institutionName ?? undefined,
         };

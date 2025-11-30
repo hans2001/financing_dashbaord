@@ -1,9 +1,13 @@
-import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 
 import { jsonErrorResponse } from "@/lib/api-response";
 import { DEMO_USER_ID } from "@/lib/demo-user";
 import { prisma } from "@/lib/prisma";
+
+type TransactionFindManyArgs = NonNullable<
+  Parameters<typeof prisma.transaction.findMany>[0]
+>;
+type TransactionWhereInput = NonNullable<TransactionFindManyArgs["where"]>;
 
 const SUMMARY_CHUNK_SIZE = 1000;
 
@@ -24,7 +28,7 @@ export async function GET(request: Request) {
     const startDate = url.searchParams.get("startDate");
     const endDate = url.searchParams.get("endDate");
 
-    const where: Prisma.TransactionWhereInput = {
+    const where: TransactionWhereInput = {
       account: {
         bankItem: {
           userId: DEMO_USER_ID,

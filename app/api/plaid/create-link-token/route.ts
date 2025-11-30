@@ -2,6 +2,7 @@ import { jsonErrorResponse } from "@/lib/api-response";
 import { ensureDemoUser } from "@/lib/demo-user";
 import { plaidClient } from "@/lib/plaid";
 import { NextResponse } from "next/server";
+import { CountryCode, Products } from "plaid";
 
 export async function POST() {
   try {
@@ -10,8 +11,8 @@ export async function POST() {
       user: { client_user_id: user.id },
       client_name:
         process.env.NEXT_PUBLIC_APP_NAME ?? "Personal Finance Dashboard",
-      products: ["transactions"],
-      country_codes: ["US"],
+      products: [Products.Transactions],
+      country_codes: [CountryCode.Us],
       language: "en",
     });
 
