@@ -837,7 +837,7 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="flex min-h-0 flex-col rounded-3xl border border-slate-200 bg-white/90 p-4 shadow-sm shadow-slate-900/5">
+            <div className="flex min-h-0 flex-col rounded-2xl border border-slate-200 bg-white/90 p-3 shadow-sm shadow-slate-900/5">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-[0.65rem] uppercase tracking-[0.35em] text-slate-400">
@@ -849,7 +849,7 @@ export default function DashboardPage() {
                 </div>
                 <button
                   type="button"
-                  className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.25em] text-slate-600 transition hover:border-slate-400 hover:text-slate-900"
+                  className="rounded-full border border-slate-200 bg-white px-2 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.3em] text-slate-600 transition hover:border-slate-400 hover:text-slate-900"
                   onClick={() => setShowAccountsPanel((prev) => !prev)}
                 >
                   {showAccountsPanel ? "Hide" : "Show"}
@@ -862,36 +862,30 @@ export default function DashboardPage() {
               ) : accountsError ? (
                 <p className="mt-4 text-sm text-red-600">{accountsError}</p>
               ) : showAccountsPanel ? (
-                <div className="mt-4 flex-1 space-y-3 overflow-y-auto pr-1">
+                <div className="mt-3 flex-1 overflow-y-auto pr-1 text-[0.75rem] text-slate-700 space-y-3">
                   {accounts.map((account) => (
-                    <article
+                    <div
                       key={account.id}
-                      className="rounded-2xl border border-slate-200 bg-white/80 p-4 text-sm text-slate-700"
+                      className="rounded-2xl border border-slate-100 bg-white/90 px-3 py-3"
                     >
-                      <div className="flex items-center justify-between">
-                        <p className="text-[0.65rem] uppercase tracking-[0.3em] text-slate-400">
-                          {account.institutionName ?? "Plaid"}
-                        </p>
+                      <div className="flex items-center justify-between text-[0.6rem] uppercase tracking-[0.3em] text-slate-400">
+                        <span>{account.institutionName ?? "Plaid"}</span>
                         <span className="text-xs text-slate-400">
                           {account.type}
                         </span>
                       </div>
-                      <h3 className="mt-2 text-base font-semibold text-slate-900">
+                      <p className="mt-1 text-sm font-semibold text-slate-900">
                         {account.name}
-                      </h3>
-                      <p className="text-xs text-slate-500">
-                        {account.officialName ?? account.name}
                       </p>
-                      {account.mask && (
-                        <p className="mt-1 text-xs text-slate-500">
-                          •••• {account.mask}
-                        </p>
-                      )}
-                    </article>
+                      <p className="text-[0.65rem] text-slate-500">
+                        {account.officialName ?? account.name}
+                        {account.mask ? ` •••• ${account.mask}` : ""}
+                      </p>
+                    </div>
                   ))}
                 </div>
               ) : (
-                <p className="mt-4 text-sm text-slate-500">
+                <p className="mt-3 text-sm text-slate-500">
                   Linked accounts are paused by default. Click “Show” to review
                   the list.
                 </p>
