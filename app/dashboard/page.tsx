@@ -676,8 +676,8 @@ export default function DashboardPage() {
                           <td className="text-[0.75rem] text-slate-500">
                             {tx.categoryPath ?? "Uncategorized"}
                           </td>
-                          <td className="w-10 text-[0.75rem] text-slate-500">
-                            <div className="flex max-w-full items-center overflow-x-auto whitespace-nowrap">
+                          <td className="w-48 text-[0.75rem] text-slate-500">
+                            <div className="flex w-full max-w-full items-center overflow-x-auto whitespace-nowrap">
                               <DescriptionEditor
                                 transactionId={tx.id}
                                 value={tx.description ?? ""}
@@ -956,62 +956,62 @@ function DescriptionEditor({
     }
   });
 
-  if (!isEditing) {
-    return (
-      <div className="flex flex-col">
-        <button
-          type="button"
-          className="group flex h-7 w-full items-center rounded border border-transparent px-2 text-left text-xs text-slate-700 transition hover:border-slate-200 hover:bg-white focus:outline-none"
-          onClick={() => {
-            setIsEditing(true);
-            setStatus("idle");
-            setErrorMessage(null);
-          }}
-        >
-          {value?.trim() ? (
-            <span className="block w-full truncate" title={value}>
-              {truncateInline(value, 30)}
-            </span>
-          ) : (
-            <span className="block w-full truncate italic text-slate-400">
-              Add description
-            </span>
-          )}
-        </button>
-        <div className="h-0" />
-      </div>
-    );
-  }
+  const readOnlyView = (
+    <button
+      type="button"
+      className="group flex min-h-[1.75rem] w-full items-center rounded border border-transparent px-2 text-left text-xs text-slate-700 transition hover:border-slate-200 hover:bg-white focus:outline-none"
+      onClick={() => {
+        setIsEditing(true);
+        setStatus("idle");
+        setErrorMessage(null);
+      }}
+    >
+      {value?.trim() ? (
+        <span className="block w-full truncate" title={value}>
+          {truncateInline(value)}
+        </span>
+      ) : (
+        <span className="block w-full truncate italic text-slate-400">
+          Add description
+        </span>
+      )}
+    </button>
+  );
+
+  const editView = (
+    <form onSubmit={onSubmit} className="flex w-full flex-col">
+      <input
+        {...register("description")}
+        className="min-h-[1.75rem] w-full rounded border border-slate-200 bg-white px-2 text-xs text-slate-700 outline-none focus:border-slate-400"
+        placeholder="Add notes"
+        maxLength={300}
+        disabled={status === "saving"}
+        autoFocus
+        style={{ overflowX: "auto", whiteSpace: "nowrap" }}
+        onBlur={() => {
+          if (status === "saving") {
+            return;
+          }
+          reset({ description: value ?? "" }, { keepDirty: false });
+          setIsEditing(false);
+          setStatus("idle");
+          setErrorMessage(null);
+        }}
+      />
+    </form>
+  );
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col">
-      <div className="flex flex-col">
-        <input
-          {...register("description")}
-          className="h-7 w-full rounded border border-slate-200 bg-white px-2 text-xs text-slate-700 outline-none focus:border-slate-400"
-          placeholder="Add notes"
-          maxLength={300}
-          disabled={status === "saving"}
-          autoFocus
-          style={{ overflowX: "auto", whiteSpace: "nowrap" }}
-          onBlur={() => {
-            if (status === "saving") {
-              return;
-            }
-            reset({ description: value ?? "" }, { keepDirty: false });
-            setIsEditing(false);
-            setStatus("idle");
-            setErrorMessage(null);
-          }}
-        />
-        <div className="h-0 text-[0.6rem]">
-          {errorMessage ? (
+    <div className="flex w-full flex-col">
+      {isEditing ? editView : readOnlyView}
+      <div className="h-0 text-[0.6rem]">
+        {isEditing &&
+          (errorMessage ? (
             <p className="text-red-600">{errorMessage}</p>
           ) : status === "success" ? (
             <p className="text-emerald-600">Saved</p>
-          ) : null}
-        </div>
+          ) : null)}
       </div>
-    </form>
+    </div>
   );
 }
