@@ -84,35 +84,6 @@ const FAMILY_AUTH_HEADERS = {
   [FAMILY_AUTH_HEADER]: FAMILY_AUTH_SECRET,
 };
 
-type SummaryPeriod = "day" | "week" | "month" | "year";
-
-const countPeriods = (start: Date, end: Date, period: SummaryPeriod) => {
-  const startMs = start.getTime();
-  const endMs = end.getTime();
-  if (Number.isNaN(startMs) || Number.isNaN(endMs) || endMs < startMs) {
-    return 1;
-  }
-  const diffDays =
-    Math.floor((endMs - startMs) / (1000 * 60 * 60 * 24)) + 1;
-  switch (period) {
-    case "day":
-      return Math.max(diffDays, 1);
-    case "week":
-      return Math.max(Math.ceil(diffDays / 7), 1);
-    case "month": {
-      const months =
-        (end.getFullYear() - start.getFullYear()) * 12 +
-        (end.getMonth() - start.getMonth()) +
-        1;
-      return Math.max(months, 1);
-    }
-    case "year":
-      return Math.max(end.getFullYear() - start.getFullYear() + 1, 1);
-    default:
-      return 1;
-  }
-};
-
 const truncateInline = (value: string, maxLength = 25) => {
   if (!value) {
     return value;
@@ -430,31 +401,18 @@ export default function DashboardPage() {
     }, {});
   }, [selectionSpending]);
   const selectionTopCategories = useMemo(() => {
-    return Object.entries(selectionCategoryTotals)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 3);
+    return Object.entries(selectionCategoryTotals).sort((a, b) => b[1] - a[1]);
   }, [selectionCategoryTotals]);
-  const selectionCategoryMaxValue =
-    (selectionTopCategories[0]?.[1] ?? selectionSpentTotal) ||
-    selectionSpentTotal ||
-    1;
   const summaryCategoryEntries = useMemo(() => {
     if (!summaryData) {
       return [];
     }
     return Object.entries(summaryData.categoryTotals).sort((a, b) => b[1] - a[1]);
   }, [summaryData]);
-  const summaryTopCategories = summaryCategoryEntries.slice(0, 3);
-  const summaryCategoryMaxValue =
-    (summaryTopCategories[0]?.[1] ?? summarySpentTotal) ||
-    summarySpentTotal ||
-    1;
+  const summaryTopCategories = summaryCategoryEntries;
   const categoriesToShow = hasSelection
     ? selectionTopCategories
     : summaryTopCategories;
-  const categoriesMaxValue = hasSelection
-    ? selectionCategoryMaxValue
-    : summaryCategoryMaxValue;
   const summaryRowsLabel = hasSelection
     ? `${selection.length} selected rows`
     : isLoadingSummary
@@ -466,58 +424,6 @@ export default function DashboardPage() {
     : isLoadingSummary
       ? "Loading categories…"
       : "No spending data in this range yet.";
-  const startDateObj = useMemo(() => {
-    if (!dateRange.start) return null;
-    const parsed = new Date(dateRange.start);
-    if (Number.isNaN(parsed.getTime())) {
-      return null;
-    }
-    return parsed;
-  }, [dateRange.start]);
-  const endDateObj = useMemo(() => {
-    if (!dateRange.end) return null;
-    const parsed = new Date(dateRange.end);
-    if (Number.isNaN(parsed.getTime())) {
-      return null;
-    }
-    return parsed;
-  }, [dateRange.end]);
-  const periodCounts = useMemo(() => {
-    if (!startDateObj || !endDateObj) {
-      return { day: 1, week: 1, month: 1, year: 1 };
-    }
-    return {
-      day: countPeriods(startDateObj, endDateObj, "day"),
-      week: countPeriods(startDateObj, endDateObj, "week"),
-      month: countPeriods(startDateObj, endDateObj, "month"),
-      year: countPeriods(startDateObj, endDateObj, "year"),
-    };
-  }, [startDateObj, endDateObj]);
-  const spendingPerPeriod = {
-    day:
-      periodCounts.day > 0 ? activeSpentTotal / periodCounts.day : 0,
-    week:
-      periodCounts.week > 0 ? activeSpentTotal / periodCounts.week : 0,
-    month:
-      periodCounts.month > 0
-        ? activeSpentTotal / periodCounts.month
-        : 0,
-    year:
-      periodCounts.year > 0 ? activeSpentTotal / periodCounts.year : 0,
-  };
-  const incomePerPeriod = {
-    day:
-      periodCounts.day > 0 ? activeIncomeTotal / periodCounts.day : 0,
-    week:
-      periodCounts.week > 0 ? activeIncomeTotal / periodCounts.week : 0,
-    month:
-      periodCounts.month > 0
-        ? activeIncomeTotal / periodCounts.month
-        : 0,
-    year:
-      periodCounts.year > 0 ? activeIncomeTotal / periodCounts.year : 0,
-  };
-
   const isAllVisibleSelected =
     transactions.length > 0 &&
     transactions.every((tx) => selectedTransactionIds.has(tx.id));
@@ -843,28 +749,26 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="sticky top-6 flex max-h-[calc(100vh-200px)] min-w-0 flex-[0.15] flex-col gap-4 xl:min-w-[320px]">
-            <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-900/5">
-              <div className="pb-3">
-                <p className="text-[0.55rem] uppercase tracking-[0.35em] text-slate-400">
+          <div className="sticky top-6 flex max-h-[calc(100vh-200px)] min-w-0 flex-[0.15] flex-col gap-3 xl:min-w-[280px]">
+            <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm shadow-slate-900/5">
+              <div className="pb-2">
+                <p className="text-[0.5rem] uppercase tracking-[0.3em] text-slate-400">
                   Spending summary
                 </p>
-                <p className="text-lg font-semibold text-slate-900">
+                <p className="text-base font-semibold text-slate-900">
                   {formatCurrency(activeSpentTotal)}
                 </p>
-                <p className="text-[0.75rem] text-slate-500">
-                  {summaryRowsLabel}
-                </p>
+                <p className="text-xs text-slate-500">{summaryRowsLabel}</p>
                 {summaryErrorText && (
-                  <p className="text-[0.65rem] text-red-600">
+                  <p className="text-[0.6rem] text-red-600">
                     {summaryErrorText}
                   </p>
                 )}
-                <p className="text-[0.7rem] text-slate-400">
+                <p className="text-[0.6rem] text-slate-400">
                   {dateRange.start || "—"} → {dateRange.end || "—"}
                 </p>
               </div>
-              <dl className="divide-y divide-slate-100 text-[0.8rem] text-slate-600">
+              <dl className="divide-y divide-slate-100 text-[0.75rem] text-slate-600">
                 {[
                   {
                     label: "Net cashflow",
@@ -881,19 +785,9 @@ export default function DashboardPage() {
                     value: activeSpentTotal,
                     tone: "text-red-600",
                   },
-                  {
-                    label: "Largest expense",
-                    value: activeLargestExpense,
-                    tone: "text-red-600",
-                  },
-                  {
-                    label: "Largest inflow",
-                    value: activeLargestIncome,
-                    tone: "text-emerald-600",
-                  },
                 ].map((row) => (
-                  <div key={row.label} className="flex items-center justify-between py-1.5">
-                    <dt className="text-[0.65rem] uppercase tracking-[0.3em]">
+                  <div key={row.label} className="flex items-center justify-between py-1">
+                    <dt className="text-[0.6rem] uppercase tracking-[0.25em]">
                       {row.label}
                     </dt>
                     <dd className={`font-semibold ${row.tone}`}>
@@ -901,73 +795,34 @@ export default function DashboardPage() {
                     </dd>
                   </div>
                 ))}
-                <div className="flex items-center justify-between py-1.5">
-                  <dt className="text-[0.65rem] uppercase tracking-[0.3em]">
+                <div className="flex items-center justify-between py-1">
+                  <dt className="text-[0.6rem] uppercase tracking-[0.25em]">
                     Transactions
                   </dt>
-                  <dd className="font-semibold text-slate-900">
+                  <dd className="text-[0.7rem] font-semibold text-slate-900">
                     {activeSpendCount} spend · {activeIncomeCount} inflow
                   </dd>
                 </div>
               </dl>
-              <div className="mt-3 border-t border-slate-100 pt-3">
-                <p className="text-[0.6rem] uppercase tracking-[0.3em] text-slate-400">
-                  Average spend / inflow
-                </p>
-                <div className="mt-2 grid gap-1 text-[0.75rem]">
-                  {(["day", "week", "month", "year"] as SummaryPeriod[]).map(
-                    (period) => (
-                      <div
-                        key={period}
-                        className="flex items-center justify-between text-slate-600"
-                      >
-                        <span className="capitalize">{period}</span>
-                        <span className="font-semibold text-slate-900">
-                          {formatCurrency(
-                            isFinite(spendingPerPeriod[period])
-                              ? spendingPerPeriod[period]
-                              : 0,
-                          )}
-                        </span>
-                        <span className="font-semibold text-emerald-700">
-                          {formatCurrency(
-                            isFinite(incomePerPeriod[period])
-                              ? incomePerPeriod[period]
-                              : 0,
-                          )}
-                        </span>
-                      </div>
-                    ),
-                  )}
-                </div>
-              </div>
             </div>
 
-            <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-900/5">
-              <p className="text-[0.65rem] uppercase tracking-[0.35em] text-slate-400">
+            <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm shadow-slate-900/5">
+              <p className="text-[0.55rem] uppercase tracking-[0.3em] text-slate-400">
                 Top categories
               </p>
-              <div className="mt-4 space-y-4">
+              <div className="mt-2 space-y-2">
                 {categoriesToShow.length === 0 ? (
                   <p className="text-sm text-slate-500">
                     {categoryEmptyMessage}
                   </p>
                 ) : (
-                  categoriesToShow.map(([label, value]) => (
+                  categoriesToShow.slice(0, 5).map(([label, value]) => (
                     <div key={label}>
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-slate-800">{label}</span>
-                        <span className="text-slate-500">
+                        <span className="text-xs font-semibold text-slate-500">
                           {formatCurrency(value)}
                         </span>
-                      </div>
-                      <div className="mt-2 h-[6px] rounded-full bg-slate-200">
-                        <div
-                          className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400"
-                          style={{
-                            width: `${(value / categoriesMaxValue) * 100}%`,
-                          }}
-                        />
                       </div>
                     </div>
                   ))
@@ -978,19 +833,19 @@ export default function DashboardPage() {
             <div className="flex min-h-0 flex-col rounded-2xl border border-slate-200 bg-white/90 p-3 shadow-sm shadow-slate-900/5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-[0.65rem] uppercase tracking-[0.35em] text-slate-400">
+                  <p className="text-[0.55rem] uppercase tracking-[0.3em] text-slate-400">
                     Linked accounts
                   </p>
-                  <h2 className="mt-1 text-lg font-semibold text-slate-900">
+                  <p className="text-sm font-semibold text-slate-900">
                     {accounts.length} connected
-                  </h2>
+                  </p>
                 </div>
                 <button
                   type="button"
-                  className="rounded-full border border-slate-200 bg-white px-2 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.3em] text-slate-600 transition hover:border-slate-400 hover:text-slate-900"
+                  className="text-[0.6rem] font-semibold uppercase tracking-[0.2em] text-slate-500 underline-offset-2 hover:text-slate-800"
                   onClick={() => setShowAccountsPanel((prev) => !prev)}
                 >
-                  {showAccountsPanel ? "Hide" : "Show"}
+                  {showAccountsPanel ? "Less" : "Details"}
                 </button>
               </div>
               {isLoadingAccounts ? (
@@ -999,34 +854,34 @@ export default function DashboardPage() {
                 </p>
               ) : accountsError ? (
                 <p className="mt-4 text-sm text-red-600">{accountsError}</p>
-              ) : showAccountsPanel ? (
-                <div className="mt-3 flex-1 overflow-y-auto pr-1 text-[0.75rem] text-slate-700 space-y-3">
-                  {accounts.map((account) => (
-                    <div
-                      key={account.id}
-                      className="rounded-2xl border border-slate-100 bg-white/90 px-3 py-3"
-                    >
-                      <div className="flex items-center justify-between text-[0.6rem] uppercase tracking-[0.3em] text-slate-400">
-                        <span>{account.institutionName ?? "Plaid"}</span>
-                        <span className="text-xs text-slate-400">
-                          {account.type}
-                        </span>
-                      </div>
-                      <p className="mt-1 text-sm font-semibold text-slate-900">
-                        {account.name}
-                      </p>
-                      <p className="text-[0.65rem] text-slate-500">
-                        {account.officialName ?? account.name}
-                        {account.mask ? ` •••• ${account.mask}` : ""}
-                      </p>
-                    </div>
-                  ))}
-                </div>
               ) : (
-                <p className="mt-3 text-sm text-slate-500">
-                  Linked accounts are paused by default. Click “Show” to review
-                  the list.
-                </p>
+                <div className="mt-2 flex-1 overflow-y-auto pr-1 text-[0.85rem] text-slate-700">
+                  {(showAccountsPanel ? accounts : accounts.slice(0, 4)).map(
+                    (account) => (
+                      <div
+                        key={account.id}
+                        className="flex items-center justify-between border-b border-slate-100 py-1 text-sm last:border-none"
+                      >
+                        <div>
+                          <p className="font-medium text-slate-900">
+                            {account.name}
+                          </p>
+                          <p className="text-[0.6rem] text-slate-500">
+                            {account.institutionName ?? "Plaid"}
+                          </p>
+                        </div>
+                        <p className="text-[0.6rem] uppercase tracking-[0.2em] text-slate-400">
+                          {account.type}
+                        </p>
+                      </div>
+                    ),
+                  )}
+                  {accounts.length > 4 && !showAccountsPanel && (
+                    <p className="pt-2 text-[0.6rem] uppercase tracking-[0.25em] text-slate-400">
+                      +{accounts.length - 4} more
+                    </p>
+                  )}
+                </div>
               )}
             </div>
           </div>
@@ -1115,7 +970,7 @@ function DescriptionEditor({
         >
           {value?.trim() ? (
             <span className="block w-full truncate" title={value}>
-              {truncateInline(value, 25)}
+              {truncateInline(value, 30)}
             </span>
           ) : (
             <span className="block w-full truncate italic text-slate-400">
