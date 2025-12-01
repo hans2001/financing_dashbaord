@@ -26,7 +26,15 @@ export async function GET(request: Request) {
     });
 
     return NextResponse.json({
-      accounts: accounts.map((account) => ({
+      accounts: accounts.map((account: {
+        id: string;
+        name: string;
+        officialName: string | null;
+        mask: string | null;
+        type: string;
+        subtype: string | null;
+        bankItem: { institutionName: string | null };
+      }) => ({
         id: account.id,
         name: account.name,
         officialName: account.officialName,
