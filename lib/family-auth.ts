@@ -36,7 +36,19 @@ function consumeRateLimit(secret: string) {
   return true;
 }
 
-export function authorizeRequest(request: Request) {
+type AuthorizationSuccess = {
+  ok: true;
+  token: string;
+};
+
+type AuthorizationFailure = {
+  ok: false;
+  response: NextResponse;
+};
+
+export type AuthorizationResult = AuthorizationSuccess | AuthorizationFailure;
+
+export function authorizeRequest(request: Request): AuthorizationResult {
   const providedSecret = request.headers.get(FAMILY_AUTH_HEADER) ?? "";
   if (providedSecret !== FAMILY_SECRET) {
     return {
@@ -65,4 +77,8 @@ export function authorizeRequest(request: Request) {
 
 export function getFamilyHeaderValue() {
   return FAMILY_SECRET;
+}
+
+export function resetFamilyRateLimit() {
+  rateLimitMap.clear();
 }

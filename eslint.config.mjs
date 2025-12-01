@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Additional dirs for this workspace.
+    "node_modules/**",
+    "coverage/**",
+    "reports/**",
   ]),
 ]);
 

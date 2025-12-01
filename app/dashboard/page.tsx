@@ -52,8 +52,14 @@ const formatCurrency = (value: number) =>
 
 const formatIsoDate = (date: Date) => date.toISOString().split("T")[0];
 
-const today = new Date();
-const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+const computeDefaultDateRange = () => {
+  const now = new Date();
+  const startOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  return {
+    start: formatIsoDate(startOfMonth),
+    end: formatIsoDate(now),
+  };
+};
 const PAGE_SIZE_OPTIONS = [25, 50, 100];
 const FAMILY_AUTH_HEADER = "x-family-secret";
 const FAMILY_AUTH_SECRET =
@@ -104,10 +110,7 @@ export default function DashboardPage() {
   const [isLoadingTransactions, setIsLoadingTransactions] = useState(true);
   const [transactionsError, setTransactionsError] = useState<string | null>(null);
   const [selectedAccount, setSelectedAccount] = useState("all");
-  const [dateRange, setDateRange] = useState({
-    start: formatIsoDate(firstDayOfMonth),
-    end: formatIsoDate(today),
-  });
+  const [dateRange, setDateRange] = useState({ start: "", end: "" });
   const [refreshKey, setRefreshKey] = useState(0);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
@@ -119,6 +122,15 @@ export default function DashboardPage() {
   );
   const [isLoadingSummary, setIsLoadingSummary] = useState(true);
   const [summaryError, setSummaryError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setDateRange((current) => {
+      if (current.start && current.end) {
+        return current;
+      }
+      return computeDefaultDateRange();
+    });
+  }, []);
 
   useEffect(() => {
     let ignore = false;
@@ -156,6 +168,9 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
+    if (!dateRange.start || !dateRange.end) {
+      return;
+    }
     let ignore = false;
     setIsLoadingTransactions(true);
     setTransactionsError(null);
@@ -219,6 +234,9 @@ export default function DashboardPage() {
   ]);
 
   useEffect(() => {
+    if (!dateRange.start || !dateRange.end) {
+      return;
+    }
     let ignore = false;
     setIsLoadingSummary(true);
     setSummaryError(null);
@@ -405,15 +423,26 @@ export default function DashboardPage() {
     : isLoadingSummary
       ? "Loading categories…"
       : "No spending data in this range yet.";
-  const startDateObj = useMemo(
-    () => new Date(dateRange.start),
-    [dateRange.start],
-  );
-  const endDateObj = useMemo(
-    () => new Date(dateRange.end),
-    [dateRange.end],
-  );
+  const startDateObj = useMemo(() => {
+    if (!dateRange.start) return null;
+    const parsed = new Date(dateRange.start);
+    if (Number.isNaN(parsed.getTime())) {
+      return null;
+    }
+    return parsed;
+  }, [dateRange.start]);
+  const endDateObj = useMemo(() => {
+    if (!dateRange.end) return null;
+    const parsed = new Date(dateRange.end);
+    if (Number.isNaN(parsed.getTime())) {
+      return null;
+    }
+    return parsed;
+  }, [dateRange.end]);
   const periodCounts = useMemo(() => {
+    if (!startDateObj || !endDateObj) {
+      return { day: 1, week: 1, month: 1, year: 1 };
+    }
     return {
       day: countPeriods(startDateObj, endDateObj, "day"),
       week: countPeriods(startDateObj, endDateObj, "week"),
@@ -738,7 +767,7 @@ export default function DashboardPage() {
                   </p>
                 )}
                 <p className="text-[0.7rem] text-slate-400">
-                  {dateRange.start} → {dateRange.end}
+                  {dateRange.start || "—"} → {dateRange.end || "—"}
                 </p>
               </div>
               <dl className="divide-y divide-slate-100 text-[0.8rem] text-slate-600">
