@@ -718,7 +718,7 @@ export default function DashboardPage() {
                           key={tx.id}
                           className="border-b border-slate-100 text-xs last:border-none"
                         >
-                          <td className="">
+                          <td>
                             <input
                               type="checkbox"
                               className="h-4 w-4 rounded border-slate-300 text-slate-700 focus:ring-slate-500"
@@ -726,7 +726,7 @@ export default function DashboardPage() {
                               onChange={() => toggleSelectRow(tx.id)}
                             />
                           </td>
-                          <td className=" text-[0.75rem] text-slate-500">
+                          <td className="text-[0.75rem] text-slate-500">
                             <div>{tx.date}</div>
                             {tx.time && (
                               <p className="text-[0.65rem] text-slate-400">
@@ -734,19 +734,19 @@ export default function DashboardPage() {
                               </p>
                             )}
                           </td>
-                          <td className="">
+                          <td>
                             <span
                               className={
                                 tx.pending
-                                  ? "rounded-full bg-amber-100 px-1.5  text-[0.55rem] font-semibold uppercase tracking-[0.2em] text-amber-700"
-                                  : "rounded-full bg-emerald-100 px-1.5  text-[0.55rem] font-semibold uppercase tracking-[0.2em] text-emerald-700"
+                                  ? "rounded-full bg-amber-100 px-1.5 text-[0.55rem] font-semibold uppercase tracking-[0.2em] text-amber-700"
+                                  : "rounded-full bg-emerald-100 px-1.5 text-[0.55rem] font-semibold uppercase tracking-[0.2em] text-emerald-700"
                               }
                             >
                               {tx.pending ? "Pending" : "Posted"}
                             </span>
                           </td>
-                          <td className="">{tx.accountName}</td>
-                          <td className="">
+                          <td>{tx.accountName}</td>
+                          <td>
                             <div className="flex flex-wrap items-center gap-2">
                               <span
                                 className="text-xs font-medium text-slate-900"
@@ -767,10 +767,10 @@ export default function DashboardPage() {
                                 </p>
                               )}
                           </td>
-                          <td className=" text-[0.75rem] text-slate-500">
+                          <td className="text-[0.75rem] text-slate-500">
                             {tx.categoryPath ?? "Uncategorized"}
                           </td>
-                          <td className="w-48 pr-2 text-[0.75rem] text-slate-500">
+                          <td className="w-10 text-[0.75rem] text-slate-500">
                             <div className="flex max-w-full items-center overflow-x-auto whitespace-nowrap">
                               <DescriptionEditor
                                 transactionId={tx.id}
@@ -779,7 +779,7 @@ export default function DashboardPage() {
                               />
                             </div>
                           </td>
-                          <td className=" text-right text-sm font-medium">
+                          <td className="text-right text-sm font-medium">
                             <span
                               className={
                                 tx.amount < 0
@@ -1115,7 +1115,7 @@ function DescriptionEditor({
         >
           {value?.trim() ? (
             <span className="block w-full truncate" title={value}>
-              {truncateInline(value)}
+              {truncateInline(value, 25)}
             </span>
           ) : (
             <span className="block w-full truncate italic text-slate-400">
@@ -1135,7 +1135,7 @@ function DescriptionEditor({
           {...register("description")}
           className="h-7 w-full rounded border border-slate-200 bg-white px-2 text-xs text-slate-700 outline-none focus:border-slate-400"
           placeholder="Add notes"
-          maxLength={500}
+          maxLength={300}
           disabled={status === "saving"}
           autoFocus
           style={{ overflowX: "auto", whiteSpace: "nowrap" }}
