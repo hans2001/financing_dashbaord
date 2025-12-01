@@ -872,15 +872,15 @@ export default function DashboardPage() {
                   {categoryEmptyMessage}
                 </p>
               ) : (
-                <div className="mt-3 flex flex-wrap items-center gap-4">
-                  <div className="relative h-32 w-32 shrink-0">
+                <div className="mt-3 flex flex-col items-center gap-3 text-center">
+                  <div className="relative h-36 w-36">
                     <div
                       className="h-full w-full rounded-full"
                       style={{
                         backgroundImage: `conic-gradient(${pieGradient})`,
                       }}
                     />
-                    <div className="absolute inset-6 flex flex-col items-center justify-center rounded-full bg-white text-center">
+                    <div className="absolute inset-7 flex flex-col items-center justify-center rounded-full bg-white text-center">
                       <span className="text-[0.55rem] uppercase tracking-[0.2em] text-slate-400">
                         Total
                       </span>
@@ -889,11 +889,11 @@ export default function DashboardPage() {
                       </span>
                     </div>
                   </div>
-                  <div className="flex min-w-[160px] flex-1 flex-col gap-1 text-sm text-slate-600">
+                  <div className="flex flex-col items-center gap-1 text-sm text-slate-600 md:flex-row md:flex-wrap md:items-center md:gap-3">
                     {pieSegments.map((segment) => (
                       <div
                         key={segment.label}
-                        className="flex items-center justify-between gap-2"
+                        className="flex w-full max-w-sm items-center justify-between gap-2 md:w-auto md:flex-1"
                       >
                         <div className="flex items-center gap-2">
                           <span
