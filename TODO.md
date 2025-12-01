@@ -1,9 +1,9 @@
 # Future iterations
 
-- [ ] Implement a sort-by dropdown that lets users reorder transactions by date, amount, or merchant name while respecting the current filters.
+- [x] Implement a sort-by dropdown that lets users reorder transactions by date, amount, or merchant name while respecting the current filters.
 - [x] Add authentication that ensures only family members can access the dashboard.
 - [ ] Pre-register Yuki and Hans accounts with proper roles so they can sign in without extra onboarding.
-- [ ] filter to show spending only or inflow only for transaction table.
+- [x] filter to show spending only or inflow only for transaction table.
 - [ ] Allow manual CRUD of supplemental transactions (e.g., attache to new accounts(can self open)) so the dashboard can track (famiy assets oversees).
 - [ ] Add a monthly trend line chart (date → spent) so momentum can be tracked without exporting data.
 - [ ] Show a pie chart of spending by category to highlight where money is going at a glance.

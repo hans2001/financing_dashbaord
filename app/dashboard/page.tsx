@@ -61,6 +61,19 @@ const computeDefaultDateRange = () => {
   };
 };
 const PAGE_SIZE_OPTIONS = [25, 50, 100];
+const SORT_OPTIONS = [
+  { value: "date_desc", label: "Date (newest first)" },
+  { value: "date_asc", label: "Date (oldest first)" },
+  { value: "amount_desc", label: "Amount (high → low)" },
+  { value: "amount_asc", label: "Amount (low → high)" },
+  { value: "merchant_asc", label: "Merchant (A → Z)" },
+  { value: "merchant_desc", label: "Merchant (Z → A)" },
+];
+const FLOW_FILTERS = [
+  { value: "all", label: "All activity" },
+  { value: "spending", label: "Spending only" },
+  { value: "inflow", label: "Income only" },
+];
 const FAMILY_AUTH_HEADER = "x-family-secret";
 const FAMILY_AUTH_SECRET =
   process.env.NEXT_PUBLIC_FAMILY_AUTH_TOKEN ??
@@ -122,6 +135,8 @@ export default function DashboardPage() {
   );
   const [isLoadingSummary, setIsLoadingSummary] = useState(true);
   const [summaryError, setSummaryError] = useState<string | null>(null);
+  const [sortOption, setSortOption] = useState(SORT_OPTIONS[0].value);
+  const [flowFilter, setFlowFilter] = useState(FLOW_FILTERS[0].value);
 
   useEffect(() => {
     setDateRange((current) => {
@@ -185,6 +200,8 @@ export default function DashboardPage() {
         params.set("startDate", dateRange.start);
         params.set("endDate", dateRange.end);
         params.set("offset", (currentPage * pageSize).toString());
+        params.set("sort", sortOption);
+        params.set("flow", flowFilter);
 
         const response = await fetch(`/api/transactions?${params.toString()}`, {
           headers: FAMILY_AUTH_HEADERS,
@@ -231,6 +248,8 @@ export default function DashboardPage() {
     refreshKey,
     currentPage,
     pageSize,
+    sortOption,
+    flowFilter,
   ]);
 
   useEffect(() => {
@@ -287,7 +306,14 @@ export default function DashboardPage() {
   useEffect(() => {
     setCurrentPage(0);
     setSelectedTransactionIds(new Set());
-  }, [selectedAccount, dateRange.start, dateRange.end, pageSize]);
+  }, [
+    selectedAccount,
+    dateRange.start,
+    dateRange.end,
+    pageSize,
+    sortOption,
+    flowFilter,
+  ]);
 
   const handleSync = async () => {
     setIsSyncing(true);
@@ -535,7 +561,7 @@ export default function DashboardPage() {
                 <h2 className="text-lg font-semibold text-slate-900">
                   Transactions
                 </h2>
-                <div className="grid w-full gap-3 text-[0.55rem] uppercase tracking-[0.3em] text-slate-500 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="grid w-full gap-3 text-[0.55rem] uppercase tracking-[0.3em] text-slate-500 sm:grid-cols-2 lg:grid-cols-6">
                   <label className="flex flex-col gap-1">
                     Account
                     <select
@@ -593,6 +619,34 @@ export default function DashboardPage() {
                       {PAGE_SIZE_OPTIONS.map((size) => (
                         <option value={size} key={size}>
                           {size} / page
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="flex flex-col gap-1">
+                    Flow
+                    <select
+                      className="h-8 w-full rounded-sm border border-slate-200 bg-white px-2 text-xs text-slate-700 outline-none focus:border-slate-400"
+                      value={flowFilter}
+                      onChange={(event) => setFlowFilter(event.target.value)}
+                    >
+                      {FLOW_FILTERS.map((option) => (
+                        <option value={option.value} key={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="flex flex-col gap-1">
+                    Sort
+                    <select
+                      className="h-8 w-full rounded-sm border border-slate-200 bg-white px-2 text-xs text-slate-700 outline-none focus:border-slate-400"
+                      value={sortOption}
+                      onChange={(event) => setSortOption(event.target.value)}
+                    >
+                      {SORT_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
                         </option>
                       ))}
                     </select>

@@ -144,6 +144,47 @@ describe("transactions listing", () => {
     expect(payload.transactions[0].time).toBe("09:13");
     expect(payload.transactions[0].institutionName).toBe("Test Bank");
   });
+
+  it("supports sorting and flow filters", async () => {
+    prismaMock.transaction.findMany.mockImplementationOnce(async (args) => {
+      expect(args?.orderBy).toEqual({ amount: "asc" });
+      expect(args?.where?.amount).toEqual({ lt: 0 });
+      return [];
+    });
+    prismaMock.transaction.count.mockImplementationOnce(async (args) => {
+      expect(args?.where?.amount).toEqual({ lt: 0 });
+      return 0;
+    });
+
+    let response = await transactionsGET(
+      new Request(
+        "http://localhost/api/transactions?flow=spending&sort=amount_desc",
+      ),
+    );
+
+    expect(response.status).toBe(200);
+    let payload = await response.json();
+    expect(payload.total).toBe(0);
+
+    prismaMock.transaction.findMany.mockImplementationOnce(async (args) => {
+      expect(args?.orderBy).toEqual({ amount: "desc" });
+      expect(args?.where?.amount).toEqual({ gt: 0 });
+      return [];
+    });
+    prismaMock.transaction.count.mockImplementationOnce(async (args) => {
+      expect(args?.where?.amount).toEqual({ gt: 0 });
+      return 0;
+    });
+
+    response = await transactionsGET(
+      new Request(
+        "http://localhost/api/transactions?flow=inflow&sort=amount_desc",
+      ),
+    );
+    expect(response.status).toBe(200);
+    payload = await response.json();
+    expect(payload.total).toBe(0);
+  });
 });
 
 describe("transactions summary", () => {

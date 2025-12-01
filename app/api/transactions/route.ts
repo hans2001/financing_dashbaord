@@ -34,6 +34,8 @@ export async function GET(request: Request) {
     const endDate = url.searchParams.get("endDate");
     const limitParam = Number(url.searchParams.get("limit") ?? 100);
     const offsetParam = Number(url.searchParams.get("offset") ?? 0);
+    const sortParam = url.searchParams.get("sort") ?? "date_desc";
+    const flowParam = url.searchParams.get("flow") ?? "all";
 
     const limit = Math.min(Math.max(limitParam, 1), MAX_PAGE_SIZE);
     const offset = Math.max(offsetParam, 0);
@@ -74,6 +76,36 @@ export async function GET(request: Request) {
       }
     }
 
+    if (flowParam === "spending") {
+      where.amount = { lt: 0 };
+    } else if (flowParam === "inflow") {
+      where.amount = { gt: 0 };
+    }
+
+    const orderBy = (() => {
+      switch (sortParam) {
+        case "date_asc":
+          return { date: "asc" } as const;
+        case "amount_desc":
+          if (flowParam === "spending") {
+            return { amount: "asc" } as const;
+          }
+          return { amount: "desc" } as const;
+        case "amount_asc":
+          if (flowParam === "spending") {
+            return { amount: "desc" } as const;
+          }
+          return { amount: "asc" } as const;
+        case "merchant_asc":
+          return { merchantName: "asc" } as const;
+        case "merchant_desc":
+          return { merchantName: "desc" } as const;
+        case "date_desc":
+        default:
+          return { date: "desc" } as const;
+      }
+    })();
+
     const [transactions, total] = await Promise.all([
       prisma.transaction.findMany({
         where,
@@ -84,9 +116,7 @@ export async function GET(request: Request) {
             },
           },
         },
-        orderBy: {
-          date: "desc",
-        },
+        orderBy,
         take: limit,
         skip: offset,
       }),
