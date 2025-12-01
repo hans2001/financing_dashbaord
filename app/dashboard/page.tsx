@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
 
 type Account = {
   id: string;
@@ -18,6 +19,7 @@ type Transaction = {
   time?: string | null;
   accountName: string;
   amount: number;
+  description?: string | null;
   merchantName?: string | null;
   name: string;
   category: string[];
@@ -111,6 +113,13 @@ const countPeriods = (start: Date, end: Date, period: SummaryPeriod) => {
   }
 };
 
+const truncateInline = (value: string, maxLength = 25) => {
+  if (!value) {
+    return value;
+  }
+  return value.length > maxLength ? `${value.slice(0, maxLength)}…` : value;
+};
+
 export default function DashboardPage() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -137,6 +146,15 @@ export default function DashboardPage() {
   const [summaryError, setSummaryError] = useState<string | null>(null);
   const [sortOption, setSortOption] = useState(SORT_OPTIONS[0].value);
   const [flowFilter, setFlowFilter] = useState(FLOW_FILTERS[0].value);
+  const handleDescriptionSaved = useCallback((transactionId: string, description: string | null) => {
+    setTransactions((prev) =>
+      prev.map((transaction) =>
+        transaction.id === transactionId
+          ? { ...transaction, description: description ?? null }
+          : transaction,
+      ),
+    );
+  }, []);
 
   useEffect(() => {
     setDateRange((current) => {
@@ -331,8 +349,7 @@ export default function DashboardPage() {
         throw new Error(payload?.error ?? "Sync failed");
       }
       setSyncMessage(
-        `Fetched ${payload.fetched ?? 0}, inserted ${
-          payload.inserted ?? 0
+        `Fetched ${payload.fetched ?? 0}, inserted ${payload.inserted ?? 0
         }, updated ${payload.updated ?? 0}`,
       );
       setRefreshKey((prev) => prev + 1);
@@ -532,7 +549,7 @@ export default function DashboardPage() {
 
   return (
     <main className="px-4 py-10">
-      <div className="mx-auto flex max-w-[1400px] flex-col gap-8">
+      <div className="mx-auto flex max-w-[1400px] flex-col gap-4">
         <section className="flex flex-col gap-2 rounded-3xl border border-slate-200 bg-white px-4 py-3 shadow-sm shadow-slate-900/5 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-xl font-semibold text-slate-900">
@@ -665,10 +682,20 @@ export default function DashboardPage() {
                     No transactions were found for this range.
                   </p>
                 ) : (
-                  <table className="min-w-full text-left text-xs">
+                  <table className="min-w-full table-fixed text-left text-xs">
+                    <colgroup>
+                      <col style={{ width: "2rem" }} />
+                      <col style={{ width: "4rem" }} />
+                      <col style={{ width: "3rem" }} />
+                      <col style={{ width: "5rem" }} />
+                      <col style={{ width: "10rem" }} />
+                      <col style={{ width: "2rem" }} />
+                      <col />
+                      <col style={{ width: "2rem" }} />
+                    </colgroup>
                     <thead className="text-[0.55rem] uppercase tracking-[0.3em] text-slate-500">
                       <tr>
-                        <th className="w-8 py-1.5">
+                        <th className="py-1.5">
                           <input
                             type="checkbox"
                             className="h-4 w-4 rounded border-slate-300 text-slate-700 focus:ring-slate-500"
@@ -681,6 +708,7 @@ export default function DashboardPage() {
                         <th className="py-1.5">Account</th>
                         <th className="py-1.5">Merchant / Name</th>
                         <th className="py-1.5">Category</th>
+                        <th className="py-1.5 pr-4">Description</th>
                         <th className="py-1.5 text-right">Amount</th>
                       </tr>
                     </thead>
@@ -690,7 +718,7 @@ export default function DashboardPage() {
                           key={tx.id}
                           className="border-b border-slate-100 text-xs last:border-none"
                         >
-                          <td className="py-2">
+                          <td className="">
                             <input
                               type="checkbox"
                               className="h-4 w-4 rounded border-slate-300 text-slate-700 focus:ring-slate-500"
@@ -698,7 +726,7 @@ export default function DashboardPage() {
                               onChange={() => toggleSelectRow(tx.id)}
                             />
                           </td>
-                          <td className="py-2 text-[0.75rem] text-slate-500">
+                          <td className=" text-[0.75rem] text-slate-500">
                             <div>{tx.date}</div>
                             {tx.time && (
                               <p className="text-[0.65rem] text-slate-400">
@@ -706,40 +734,52 @@ export default function DashboardPage() {
                               </p>
                             )}
                           </td>
-                          <td className="py-2">
+                          <td className="">
                             <span
                               className={
                                 tx.pending
-                                  ? "rounded-full bg-amber-100 px-2 py-0.5 text-[0.6rem] font-semibold uppercase tracking-[0.3em] text-amber-700"
-                                  : "rounded-full bg-emerald-100 px-2 py-0.5 text-[0.6rem] font-semibold uppercase tracking-[0.3em] text-emerald-700"
+                                  ? "rounded-full bg-amber-100 px-1.5  text-[0.55rem] font-semibold uppercase tracking-[0.2em] text-amber-700"
+                                  : "rounded-full bg-emerald-100 px-1.5  text-[0.55rem] font-semibold uppercase tracking-[0.2em] text-emerald-700"
                               }
                             >
                               {tx.pending ? "Pending" : "Posted"}
                             </span>
                           </td>
-                          <td className="py-2">{tx.accountName}</td>
-                          <td className="py-2">
+                          <td className="">{tx.accountName}</td>
+                          <td className="">
                             <div className="flex flex-wrap items-center gap-2">
-                              <span className="text-sm font-medium text-slate-900">
-                                {tx.merchantName ?? tx.name}
+                              <span
+                                className="text-xs font-medium text-slate-900"
+                                title={tx.merchantName ?? tx.name}
+                              >
+                                {truncateInline(tx.merchantName ?? tx.name)}
                               </span>
                             </div>
                             {(tx.location?.city ||
                               tx.paymentMeta?.payment_channel) && (
-                              <p className="text-[0.6rem] uppercase tracking-[0.25em] text-slate-400">
-                                {[tx.location?.city, tx.location?.region]
-                                  .filter(Boolean)
-                                  .join(", ")}
-                                {tx.paymentMeta?.payment_channel
-                                  ? ` • ${tx.paymentMeta.payment_channel}`
-                                  : ""}
-                              </p>
-                            )}
+                                <p className="text-[0.6rem] uppercase tracking-[0.25em] text-slate-400">
+                                  {[tx.location?.city, tx.location?.region]
+                                    .filter(Boolean)
+                                    .join(", ")}
+                                  {tx.paymentMeta?.payment_channel
+                                    ? ` • ${tx.paymentMeta.payment_channel}`
+                                    : ""}
+                                </p>
+                              )}
                           </td>
-                          <td className="py-2 text-[0.75rem] text-slate-500">
+                          <td className=" text-[0.75rem] text-slate-500">
                             {tx.categoryPath ?? "Uncategorized"}
                           </td>
-                          <td className="py-2 text-right text-sm font-medium">
+                          <td className="w-48 pr-2 text-[0.75rem] text-slate-500">
+                            <div className="flex max-w-full items-center overflow-x-auto whitespace-nowrap">
+                              <DescriptionEditor
+                                transactionId={tx.id}
+                                value={tx.description ?? ""}
+                                onSaved={(next) => handleDescriptionSaved(tx.id, next)}
+                              />
+                            </div>
+                          </td>
+                          <td className=" text-right text-sm font-medium">
                             <span
                               className={
                                 tx.amount < 0
@@ -993,5 +1033,130 @@ export default function DashboardPage() {
         </section>
       </div>
     </main>
+  );
+}
+
+type DescriptionEditorProps = {
+  transactionId: string;
+  value: string;
+  onSaved: (description: string | null) => void;
+};
+
+type DescriptionFormValues = {
+  description: string;
+};
+
+function DescriptionEditor({
+  transactionId,
+  value,
+  onSaved,
+}: DescriptionEditorProps) {
+  const { register, handleSubmit, reset } =
+    useForm<DescriptionFormValues>({
+      defaultValues: { description: value ?? "" },
+    });
+  const [status, setStatus] = useState<
+    "idle" | "saving" | "success" | "error"
+  >("idle");
+  const [isEditing, setIsEditing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    reset({ description: value ?? "" }, { keepDirty: false });
+  }, [reset, value]);
+
+  const onSubmit = handleSubmit(async (data) => {
+    setStatus("saving");
+    setErrorMessage(null);
+    try {
+      const response = await fetch(
+        `/api/transactions/${transactionId}/description`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            ...FAMILY_AUTH_HEADERS,
+          },
+          body: JSON.stringify({ description: data.description }),
+        },
+      );
+      const payload = (await response.json().catch(() => ({}))) as {
+        transaction?: { description?: string | null };
+        error?: string;
+      };
+      if (!response.ok) {
+        throw new Error(payload?.error ?? "Failed to update description");
+      }
+      const nextDescription = payload.transaction?.description ?? null;
+      onSaved(nextDescription);
+      reset({ description: nextDescription ?? "" }, { keepDirty: false });
+      setStatus("success");
+      setTimeout(() => setStatus("idle"), 2000);
+      setIsEditing(false);
+    } catch (error) {
+      setStatus("error");
+      setErrorMessage(
+        error instanceof Error ? error.message : "Failed to update description",
+      );
+    }
+  });
+
+  if (!isEditing) {
+    return (
+      <div className="flex flex-col">
+        <button
+          type="button"
+          className="group flex h-7 w-full items-center rounded border border-transparent px-2 text-left text-xs text-slate-700 transition hover:border-slate-200 hover:bg-white focus:outline-none"
+          onClick={() => {
+            setIsEditing(true);
+            setStatus("idle");
+            setErrorMessage(null);
+          }}
+        >
+          {value?.trim() ? (
+            <span className="block w-full truncate" title={value}>
+              {truncateInline(value)}
+            </span>
+          ) : (
+            <span className="block w-full truncate italic text-slate-400">
+              Add description
+            </span>
+          )}
+        </button>
+        <div className="h-0" />
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={onSubmit} className="flex flex-col">
+      <div className="flex flex-col">
+        <input
+          {...register("description")}
+          className="h-7 w-full rounded border border-slate-200 bg-white px-2 text-xs text-slate-700 outline-none focus:border-slate-400"
+          placeholder="Add notes"
+          maxLength={500}
+          disabled={status === "saving"}
+          autoFocus
+          style={{ overflowX: "auto", whiteSpace: "nowrap" }}
+          onBlur={() => {
+            if (status === "saving") {
+              return;
+            }
+            reset({ description: value ?? "" }, { keepDirty: false });
+            setIsEditing(false);
+            setStatus("idle");
+            setErrorMessage(null);
+          }}
+        />
+        <div className="h-0 text-[0.6rem]">
+          {errorMessage ? (
+            <p className="text-red-600">{errorMessage}</p>
+          ) : status === "success" ? (
+            <p className="text-emerald-600">Saved</p>
+          ) : null}
+        </div>
+      </div>
+    </form>
   );
 }

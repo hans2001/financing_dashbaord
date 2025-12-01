@@ -13,6 +13,7 @@ import { GET as accountsGET } from "@/app/api/accounts/route";
 import { GET as transactionsGET } from "@/app/api/transactions/route";
 import { POST as transactionsSyncPOST } from "@/app/api/transactions/sync/route";
 import { GET as transactionsSummaryGET } from "@/app/api/transactions/summary/route";
+import { PATCH as updateTransactionDescriptionPATCH } from "@/app/api/transactions/[transactionId]/description/route";
 import { POST as createLinkTokenPOST } from "@/app/api/plaid/create-link-token/route";
 import { POST as exchangePublicTokenPOST } from "@/app/api/plaid/exchange-public-token/route";
 import { POST as plaidWebhookPOST } from "@/app/api/plaid/webhook/route";
@@ -113,6 +114,7 @@ describe("transactions listing", () => {
       date: new Date("2024-01-02T10:00:00Z"),
       amount: "42.5",
       merchantName: "Corner Cafe",
+      description: "Breakfast meetup",
       name: "Corner Cafe",
       category: ["Dining", "Restaurants"],
       pending: false,
@@ -143,6 +145,7 @@ describe("transactions listing", () => {
     expect(payload.transactions[0].categoryPath).toBe("Dining > Restaurants");
     expect(payload.transactions[0].time).toBe("09:13");
     expect(payload.transactions[0].institutionName).toBe("Test Bank");
+    expect(payload.transactions[0].description).toBe("Breakfast meetup");
   });
 
   it("supports sorting and flow filters", async () => {
@@ -360,5 +363,53 @@ describe("plaid endpoints", () => {
     );
 
     expect(await response.json()).toEqual({ received: true });
+  });
+});
+describe("transaction description updates", () => {
+  it("validates payload and updates the record", async () => {
+    const mockUpdate = {
+      id: "tx-123",
+      description: "Updated note",
+    };
+    prismaMock.transaction.update.mockResolvedValue(mockUpdate);
+
+    const response = await updateTransactionDescriptionPATCH(
+      new Request("http://localhost/api/transactions/tx-123/description", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ description: "Updated note" }),
+      }),
+      { params: { transactionId: "tx-123" } },
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ transaction: mockUpdate });
+    expect(prismaMock.transaction.update).toHaveBeenCalledWith({
+      where: { id: "tx-123" },
+      data: { description: "Updated note" },
+      select: { id: true, description: true },
+    });
+  });
+
+  it("trims and clears empty descriptions", async () => {
+    prismaMock.transaction.update.mockResolvedValue({
+      id: "tx-123",
+      description: null,
+    });
+    const response = await updateTransactionDescriptionPATCH(
+      new Request("http://localhost/api/transactions/tx-123/description", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ description: "    " }),
+      }),
+      { params: { transactionId: "tx-123" } },
+    );
+
+    expect(response.status).toBe(200);
+    expect(prismaMock.transaction.update).toHaveBeenCalledWith({
+      where: { id: "tx-123" },
+      data: { description: null },
+      select: { id: true, description: true },
+    });
   });
 });

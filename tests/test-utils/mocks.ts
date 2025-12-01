@@ -23,6 +23,7 @@ export const prismaMock: Record<string, PrismaCollection> = {
     count: createMockFn(),
     findUnique: createMockFn(),
     upsert: createMockFn(),
+    update: createMockFn(),
   },
   bankItem: {
     findMany: createMockFn(),

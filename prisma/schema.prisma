@@ -55,6 +55,7 @@ model Transaction {
   date               DateTime
   name               String
   merchantName       String?
+  description        String?
   amount             Decimal
   isoCurrencyCode    String?
   pending            Boolean

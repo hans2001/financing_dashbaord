@@ -144,6 +144,7 @@ export async function GET(request: Request) {
           time: timePart,
           accountName: transaction.account.name,
           amount: Number(transaction.amount.toString()),
+          description: transaction.description ?? null,
           merchantName: transaction.merchantName ?? transaction.name,
           name: transaction.name,
           category: transaction.category,
