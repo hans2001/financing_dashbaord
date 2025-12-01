@@ -76,6 +76,16 @@ const FLOW_FILTERS = [
   { value: "spending", label: "Spending only" },
   { value: "inflow", label: "Income only" },
 ];
+const CATEGORY_PIE_COLORS = [
+  "#0f5ef2",
+  "#7c3aed",
+  "#22c55e",
+  "#eab308",
+  "#f97316",
+  "#ef4444",
+  "#14b8a6",
+];
+const MAX_CATEGORY_SLICES = 5;
 const FAMILY_AUTH_HEADER = "x-family-secret";
 const FAMILY_AUTH_SECRET =
   process.env.NEXT_PUBLIC_FAMILY_AUTH_TOKEN ??
@@ -413,6 +423,51 @@ export default function DashboardPage() {
   const categoriesToShow = hasSelection
     ? selectionTopCategories
     : summaryTopCategories;
+  const pieCategories = useMemo(() => {
+    const base = categoriesToShow.slice(0, MAX_CATEGORY_SLICES);
+    if (categoriesToShow.length > MAX_CATEGORY_SLICES) {
+      const remainderTotal = categoriesToShow
+        .slice(MAX_CATEGORY_SLICES)
+        .reduce((sum, [, value]) => sum + value, 0);
+      if (remainderTotal > 0) {
+        return [...base, ["Other", remainderTotal] as [string, number]];
+      }
+    }
+    return base;
+  }, [categoriesToShow]);
+  const pieTotal = pieCategories.reduce((sum, [, value]) => sum + value, 0);
+  const pieSegments = useMemo(() => {
+    if (pieCategories.length === 0) {
+      return [];
+    }
+    const total = pieTotal || 1;
+    let offset = 0;
+    return pieCategories.map(([label, value], index) => {
+      const percent = value / total;
+      const start = offset;
+      const end = start + percent * 100;
+      offset = end;
+      return {
+        label,
+        value,
+        percent,
+        start,
+        end,
+        color: CATEGORY_PIE_COLORS[index % CATEGORY_PIE_COLORS.length],
+      };
+    });
+  }, [pieCategories, pieTotal]);
+  const pieGradient = useMemo(() => {
+    if (pieSegments.length === 0) {
+      return "var(--color-slate-200) 0% 100%";
+    }
+    return pieSegments
+      .map(
+        (segment) =>
+          `${segment.color} ${segment.start}% ${segment.end}%`,
+      )
+      .join(", ");
+  }, [pieSegments]);
   const summaryRowsLabel = hasSelection
     ? `${selection.length} selected rows`
     : isLoadingSummary
@@ -456,24 +511,26 @@ export default function DashboardPage() {
   return (
     <main className="px-4 py-10">
       <div className="mx-auto flex max-w-[1400px] flex-col gap-4">
-        <section className="flex flex-col gap-2 rounded-3xl border border-slate-200 bg-white px-4 py-3 shadow-sm shadow-slate-900/5 sm:flex-row sm:items-center sm:justify-between">
+        <section className="flex flex-col  rounded-3xl border border-slate-200 bg-white px-4 py-2 shadow-sm shadow-slate-900/5 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-xl font-semibold text-slate-900">
               Accounts & spending
             </h1>
           </div>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <button
-              type="button"
-              className="inline-flex items-center justify-center rounded-full bg-slate-900 px-5 py-2 text-sm font-semibold text-white shadow hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
-              onClick={handleSync}
-              disabled={isSyncing}
-            >
-              {isSyncing ? "Syncing..." : "Sync latest transactions"}
-            </button>
-            {syncMessage && (
-              <p className="text-xs text-slate-500">{syncMessage}</p>
-            )}
+          <div className="flex w-full justify-end sm:w-auto">
+            <div className="flex flex-col items-end gap-1">
+              <button
+                type="button"
+                className="inline-flex min-w-[13rem] items-center justify-center rounded-full bg-slate-900 px-5 py-2 text-sm font-semibold text-white shadow hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                onClick={handleSync}
+                disabled={isSyncing}
+              >
+                {isSyncing ? "Syncing..." : "Sync latest transactions"}
+              </button>
+              <p className="text-[0.65rem] text-slate-500">
+                {syncMessage ?? "Last synced when this page loaded."}
+              </p>
+            </div>
           </div>
         </section>
 
@@ -810,24 +867,51 @@ export default function DashboardPage() {
               <p className="text-[0.55rem] uppercase tracking-[0.3em] text-slate-400">
                 Top categories
               </p>
-              <div className="mt-2 space-y-2">
-                {categoriesToShow.length === 0 ? (
-                  <p className="text-sm text-slate-500">
-                    {categoryEmptyMessage}
-                  </p>
-                ) : (
-                  categoriesToShow.slice(0, 5).map(([label, value]) => (
-                    <div key={label}>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-slate-800">{label}</span>
-                        <span className="text-xs font-semibold text-slate-500">
-                          {formatCurrency(value)}
+              {categoriesToShow.length === 0 ? (
+                <p className="mt-2 text-sm text-slate-500">
+                  {categoryEmptyMessage}
+                </p>
+              ) : (
+                <div className="mt-3 flex flex-wrap items-center gap-4">
+                  <div className="relative h-32 w-32 shrink-0">
+                    <div
+                      className="h-full w-full rounded-full"
+                      style={{
+                        backgroundImage: `conic-gradient(${pieGradient})`,
+                      }}
+                    />
+                    <div className="absolute inset-6 flex flex-col items-center justify-center rounded-full bg-white text-center">
+                      <span className="text-[0.55rem] uppercase tracking-[0.2em] text-slate-400">
+                        Total
+                      </span>
+                      <span className="text-sm font-semibold text-slate-900">
+                        {formatCurrency(pieTotal)}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex min-w-[160px] flex-1 flex-col gap-1 text-sm text-slate-600">
+                    {pieSegments.map((segment) => (
+                      <div
+                        key={segment.label}
+                        className="flex items-center justify-between gap-2"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="h-2.5 w-2.5 rounded-full"
+                            style={{ backgroundColor: segment.color }}
+                          />
+                          <span className="text-slate-900">
+                            {segment.label}
+                          </span>
+                        </div>
+                        <span className="text-xs text-slate-500">
+                          {Math.round(segment.percent * 100)}%
                         </span>
                       </div>
-                    </div>
-                  ))
-                )}
-              </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="flex min-h-0 flex-col rounded-2xl border border-slate-200 bg-white/90 p-3 shadow-sm shadow-slate-900/5">
