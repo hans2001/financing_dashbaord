@@ -92,7 +92,10 @@ export const truncateInline = (value: string, maxLength = 70) => {
   return value.length > maxLength ? `${value.slice(0, maxLength)}…` : value;
 };
 
-export const formatIsoDate = (date: Date) => date.toISOString().split("T")[0];
+export const formatIsoDate = (date: Date) => {
+  const [isoDate] = date.toISOString().split("T");
+  return isoDate ?? date.toISOString();
+};
 
 export const computeDefaultDateRange = () => {
   const now = new Date();

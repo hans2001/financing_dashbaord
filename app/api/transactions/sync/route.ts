@@ -58,8 +58,8 @@ export async function POST(request: Request) {
     for (const item of items) {
       const transactionsResponse = await plaidClient.transactionsGet({
         access_token: item.accessToken,
-        start_date: startDate,
-        end_date: endDate,
+        start_date: startDate ?? "",
+        end_date: endDate ?? "",
         options: {
           count: 500,
         },
@@ -98,6 +98,8 @@ export async function POST(request: Request) {
           amount: Number(tx.amount),
         });
         const normalizedAmount = -(tx.amount ?? 0);
+        const transactionName =
+          tx.name ?? tx.merchant_name ?? "Unlabeled transaction";
 
         const updatePayload: Prisma.TransactionUncheckedUpdateInput & {
           normalizedCategory: string;
@@ -108,7 +110,7 @@ export async function POST(request: Request) {
           date: new Date(tx.date),
           isoCurrencyCode: tx.iso_currency_code ?? null,
           merchantName: tx.merchant_name ?? null,
-          name: tx.name,
+          name: transactionName,
           pending: tx.pending,
           raw: normalizedTx,
           normalizedCategory,
@@ -124,7 +126,7 @@ export async function POST(request: Request) {
           date: new Date(tx.date),
           isoCurrencyCode: tx.iso_currency_code ?? null,
           merchantName: tx.merchant_name ?? null,
-          name: tx.name,
+          name: transactionName,
           pending: tx.pending,
           raw: normalizedTx,
           normalizedCategory,

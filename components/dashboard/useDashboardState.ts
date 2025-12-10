@@ -58,7 +58,7 @@ type DashboardActions = {
   onNextPage: () => void;
   onClearSelection: () => void;
   setSelectedAccount: (value: string) => void;
-  setDateRange: (value: { start: string; end: string }) => void;
+  setDateRange: Dispatch<SetStateAction<{ start: string; end: string }>>;
   setPageSize: (value: number) => void;
   setSortOption: (value: string) => void;
   setFlowFilter: (value: string) => void;
@@ -83,13 +83,16 @@ export function useDashboardState(): DashboardState & DashboardActions {
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [showAccountsPanel, setShowAccountsPanel] = useState(false);
+  const defaultPageSize = PAGE_SIZE_OPTIONS[0] ?? 25;
+  const defaultSort = SORT_OPTIONS[0]?.value ?? "date_desc";
+  const defaultFlowFilter = FLOW_FILTERS[0]?.value ?? "all";
   const [currentPage, setCurrentPage] = useState(0);
-  const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0]);
+  const [pageSize, setPageSize] = useState<number>(defaultPageSize);
   const [summaryData, setSummaryData] = useState<SummaryResponse | null>(null);
   const [isLoadingSummary, setIsLoadingSummary] = useState(true);
   const [summaryError, setSummaryError] = useState<string | null>(null);
-  const [sortOption, setSortOption] = useState(SORT_OPTIONS[0].value);
-  const [flowFilter, setFlowFilter] = useState(FLOW_FILTERS[0].value);
+  const [sortOption, setSortOption] = useState<string>(defaultSort);
+  const [flowFilter, setFlowFilter] = useState<string>(defaultFlowFilter);
 
   const handleDescriptionSaved = useCallback(
     (transactionId: string, description: string | null) => {

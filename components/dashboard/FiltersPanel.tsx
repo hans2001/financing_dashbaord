@@ -1,3 +1,4 @@
+import { memo } from "react";
 import type { Account } from "./types";
 import {
   FLOW_FILTERS,
@@ -19,7 +20,7 @@ type FiltersPanelProps = {
   onSortOptionChange: (value: string) => void;
 };
 
-export function FiltersPanel({
+function FiltersPanelComponent({
   accounts,
   selectedAccount,
   onAccountChange,
@@ -119,3 +120,5 @@ export function FiltersPanel({
     </div>
   );
 }
+
+export const FiltersPanel = memo(FiltersPanelComponent);

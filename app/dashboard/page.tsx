@@ -1,9 +1,16 @@
 'use client'
 
+import { Suspense, lazy } from "react";
+
 import { FiltersPanel } from "@/components/dashboard/FiltersPanel";
-import { SummaryPanel } from "@/components/dashboard/SummaryPanel";
 import { TransactionsTable } from "@/components/dashboard/TransactionsTable";
 import { useDashboardState } from "@/components/dashboard/useDashboardState";
+
+const SummaryPanel = lazy(() =>
+  import("@/components/dashboard/SummaryPanel").then((mod) => ({
+    default: mod.SummaryPanel,
+  })),
+);
 
 export default function DashboardPage() {
   const {
@@ -121,19 +128,27 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex min-w-0 flex-[0.15] flex-col gap-3 xl:min-w-[280px]">
-            <SummaryPanel
-              activeSpentTotal={activeSpentTotal}
-              activeIncomeTotal={activeIncomeTotal}
-              summaryRowsLabel={summaryRowsLabel}
-              summaryErrorText={summaryErrorText}
-              dateRange={dateRange}
-              activeSpendCount={activeSpendCount}
-              activeIncomeCount={activeIncomeCount}
-              activeLargestExpense={activeLargestExpense}
-              activeLargestIncome={activeLargestIncome}
-              categoriesToShow={categoriesToShow}
-              categoryEmptyMessage={categoryEmptyMessage}
-            />
+            <Suspense
+              fallback={
+                <div className="rounded-2xl border border-slate-200 bg-white p-6 text-center text-sm text-slate-500 shadow-sm shadow-slate-900/5">
+                  Loading summary…
+                </div>
+              }
+            >
+              <SummaryPanel
+                activeSpentTotal={activeSpentTotal}
+                activeIncomeTotal={activeIncomeTotal}
+                summaryRowsLabel={summaryRowsLabel}
+                summaryErrorText={summaryErrorText}
+                dateRange={dateRange}
+                activeSpendCount={activeSpendCount}
+                activeIncomeCount={activeIncomeCount}
+                activeLargestExpense={activeLargestExpense}
+                activeLargestIncome={activeLargestIncome}
+                categoriesToShow={categoriesToShow}
+                categoryEmptyMessage={categoryEmptyMessage}
+              />
+            </Suspense>
             <div className="flex min-h-0 flex-col rounded-2xl border border-slate-200 bg-white/90 p-3 shadow-sm shadow-slate-900/5">
               <div className="flex items-center justify-between">
                 <div>

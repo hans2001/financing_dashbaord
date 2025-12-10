@@ -14,3 +14,6 @@
 - [x] Add input validation/ownership checks for the transaction APIs before expanding beyond the demo user to prevent accidental data leaks.
 - [x] Introduce request throttling or caching on `/api/transactions` if the dashboard ends up exposed to larger traffic to avoid overloading Postgres.
 - [ ] Improve page navigation UX and make the filter text lower-contrast / smaller so the controls stay subtle.
+- [ ] Build targeted UI/component tests for `FiltersPanel`, `TransactionsTable`, and `SummaryPanel` (React Testing Library + mocked fetch/React Query) so the new modules gorilla-check category sorting/pagination.
+- [ ] Split `useDashboardState` into smaller, focused hooks (e.g., `useTransactionsFilters`, `useSelectionState`, `useSummaryData`) so each concern can be tested and memoized independently.
+- [ ] Add a category filter to the transactions table controls (new dropdown/tag selector) so users can narrow rows to any normalized category; this can sit alongside the existing Flow filter rather than reusing it so preferences stay explicit.

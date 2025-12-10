@@ -1,6 +1,7 @@
 import { getCategoryBadge, formatCurrency, truncateInline } from "./dashboard-utils";
 import type { Transaction } from "./types";
 import { DescriptionEditor } from "./DescriptionEditor";
+import { memo } from "react";
 
 type TransactionsTableProps = {
   transactions: Transaction[];
@@ -23,7 +24,7 @@ type TransactionsTableProps = {
   onDescriptionSaved: (transactionId: string, description: string | null) => void;
 };
 
-export function TransactionsTable({
+function TransactionsTableComponent({
   transactions,
   isLoading,
   error,
@@ -143,9 +144,9 @@ export function TransactionsTable({
                     </td>
                     <td className="text-[0.75rem]">
                       <span
-                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-[0.55rem] font-semibold uppercase tracking-[0.2em] ${categoryBadge.bg} ${categoryBadge.text} ${categoryBadge.border}`}
+                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-[0.55rem] font-semibold uppercase tracking-[0.2em] ${categoryBadge?.bg} ${categoryBadge?.text} ${categoryBadge?.border}`}
                       >
-                        {categoryBadge.label}
+                        {categoryBadge?.label}
                       </span>
                     </td>
                     <td className="w-[12rem] text-[0.75rem] text-slate-500">
@@ -214,3 +215,5 @@ export function TransactionsTable({
     </>
   );
 }
+
+export const TransactionsTable = memo(TransactionsTableComponent);

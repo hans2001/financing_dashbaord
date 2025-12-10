@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { CATEGORY_PIE_COLORS, MAX_CATEGORY_SLICES, formatCurrency } from "./dashboard-utils";
 
 type SummaryPanelProps = {
@@ -5,7 +6,7 @@ type SummaryPanelProps = {
   activeIncomeTotal: number;
   summaryRowsLabel: string;
   summaryErrorText: string | null;
-  dateRange: { start: string; end: string };
+  dateRange: { start?: string; end?: string };
   activeSpendCount: number;
   activeIncomeCount: number;
   activeLargestExpense: number;
@@ -47,13 +48,15 @@ const CategoryPie = ({ categoriesToShow, categoryEmptyMessage }: CategoryPieProp
     const start = offset;
     const end = start + percent * 100;
     offset = end;
+    const color =
+      CATEGORY_PIE_COLORS[index % CATEGORY_PIE_COLORS.length] ?? "#0f5ef2";
     segments.push({
       label,
       value,
       percent,
       start,
       end,
-      color: CATEGORY_PIE_COLORS[index % CATEGORY_PIE_COLORS.length],
+      color,
     });
   });
 
@@ -102,7 +105,7 @@ const CategoryPie = ({ categoriesToShow, categoryEmptyMessage }: CategoryPieProp
   );
 };
 
-export function SummaryPanel({
+function SummaryPanelComponent({
   activeSpentTotal,
   activeIncomeTotal,
   summaryRowsLabel,
@@ -200,3 +203,5 @@ export function SummaryPanel({
     </div>
   );
 }
+
+export const SummaryPanel = memo(SummaryPanelComponent);
