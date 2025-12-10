@@ -99,7 +99,9 @@ export async function POST(request: Request) {
         });
         const normalizedAmount = -(tx.amount ?? 0);
 
-        const updatePayload: Prisma.TransactionUncheckedUpdateInput = {
+        const updatePayload: Prisma.TransactionUncheckedUpdateInput & {
+          normalizedCategory: string;
+        } = {
           accountId: account.id,
           amount: normalizedAmount,
           category: tx.category ?? [],
@@ -112,7 +114,9 @@ export async function POST(request: Request) {
           normalizedCategory,
         };
 
-        const createPayload: Prisma.TransactionUncheckedCreateInput = {
+        const createPayload: Prisma.TransactionUncheckedCreateInput & {
+          normalizedCategory: string;
+        } = {
           accountId: account.id,
           plaidTransactionId: tx.transaction_id,
           amount: normalizedAmount,

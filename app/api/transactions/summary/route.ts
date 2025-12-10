@@ -85,6 +85,13 @@ export async function GET(request: Request) {
         },
         take: SUMMARY_CHUNK_SIZE,
         skip: offset,
+        select: {
+          amount: true,
+          category: true,
+          name: true,
+          merchantName: true,
+          normalizedCategory: true,
+        },
       });
 
       if (batch.length === 0) {

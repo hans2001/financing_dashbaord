@@ -139,17 +139,18 @@ export async function GET(request: Request) {
             category: transaction.category,
           });
         const rawData = transaction.raw as Record<string, unknown> | null;
-        const occurredAtRaw =
+        const rawDate = typeof rawData?.date === "string" ? rawData.date : null;
+        const rawDatetime =
           typeof rawData?.datetime === "string" ? rawData.datetime : null;
-        const occurredAt = occurredAtRaw
-          ? new Date(occurredAtRaw)
-          : transaction.date;
-        const occurredIso = occurredAt.toISOString();
-        const timePart = occurredIso.split("T")[1]?.slice(0, 5) ?? null;
+        const occurredDate =
+          rawDatetime?.split("T")[0] ??
+          rawDate?.split("T")[0] ??
+          transaction.date.toISOString().split("T")[0];
+        const timePart = rawDatetime?.split("T")[1]?.slice(0, 5) ?? null;
 
         return {
           id: transaction.id,
-          date: occurredIso.split("T")[0],
+          date: occurredDate,
           time: timePart,
           accountName: transaction.account.name,
           amount: Number(transaction.amount.toString()),

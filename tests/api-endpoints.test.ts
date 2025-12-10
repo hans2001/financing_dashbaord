@@ -221,6 +221,44 @@ describe("transactions summary", () => {
       Uncategorized: 5,
     });
   });
+
+  it("uses normalized categories when available", async () => {
+    prismaMock.transaction.findMany
+      .mockResolvedValueOnce([
+        {
+          amount: "-30",
+          category: [],
+          normalizedCategory: "Food",
+          name: "Uber Eats",
+          merchantName: "Uber Eats",
+        },
+        {
+          amount: "-70",
+          category: [],
+          normalizedCategory: "Rent",
+          name: "Apartment",
+          merchantName: "Apartment",
+        },
+        {
+          amount: "200",
+          category: [],
+          normalizedCategory: "Business",
+          name: "Client Payment",
+          merchantName: "Client Payment",
+        },
+      ])
+      .mockResolvedValueOnce([]);
+
+    const response = await transactionsSummaryGET(
+      new Request("http://localhost/api/transactions/summary"),
+    );
+
+    const payload = await response.json();
+    expect(payload.categoryTotals).toEqual({
+      Food: 30,
+      Rent: 70,
+    });
+  });
 });
 
 describe("transactions sync", () => {
@@ -283,6 +321,52 @@ describe("transactions sync", () => {
       start_date: expect.any(String),
       options: { count: 500 },
     });
+  });
+
+  it("persists normalized categories and flipped amounts", async () => {
+    prismaMock.bankItem.findMany.mockResolvedValue([
+      { id: "bank-1", accessToken: "access-1", userId: "demo-user" },
+    ]);
+
+    const plaidTransactions = [
+      {
+        transaction_id: "tx-1",
+        account_id: "account-a",
+        amount: 40,
+        name: "Uber Eats",
+        merchant_name: "Uber Eats",
+        category: ["Food"],
+        pending: false,
+        date: "2024-01-01",
+      },
+    ];
+
+    plaidClientMock.transactionsGet.mockResolvedValue({
+      data: { transactions: plaidTransactions },
+    });
+
+    prismaMock.account.findUnique.mockResolvedValue({
+      id: "account-a",
+    });
+    prismaMock.transaction.findUnique.mockResolvedValue(null);
+
+    const response = await transactionsSyncPOST(
+      new Request("http://localhost/api/transactions/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bankItemId: "bank-1" }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(prismaMock.transaction.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({
+          normalizedCategory: "Food",
+          amount: -40,
+        }),
+      }),
+    );
   });
 });
 

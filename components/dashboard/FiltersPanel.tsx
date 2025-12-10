@@ -1,0 +1,121 @@
+import type { Account } from "./types";
+import {
+  FLOW_FILTERS,
+  PAGE_SIZE_OPTIONS,
+  SORT_OPTIONS,
+} from "./dashboard-utils";
+
+type FiltersPanelProps = {
+  accounts: Account[];
+  selectedAccount: string;
+  onAccountChange: (value: string) => void;
+  dateRange: { start: string; end: string };
+  onDateRangeChange: (next: { start: string; end: string }) => void;
+  pageSize: number;
+  onPageSizeChange: (value: number) => void;
+  flowFilter: string;
+  onFlowFilterChange: (value: string) => void;
+  sortOption: string;
+  onSortOptionChange: (value: string) => void;
+};
+
+export function FiltersPanel({
+  accounts,
+  selectedAccount,
+  onAccountChange,
+  dateRange,
+  onDateRangeChange,
+  pageSize,
+  onPageSizeChange,
+  flowFilter,
+  onFlowFilterChange,
+  sortOption,
+  onSortOptionChange,
+}: FiltersPanelProps) {
+  return (
+    <div className="flex flex-col gap-3">
+      <h2 className="text-lg font-semibold text-slate-900">Transactions</h2>
+      <div className="grid w-full gap-3 text-[0.55rem] uppercase tracking-[0.3em] text-slate-500 sm:grid-cols-2 lg:grid-cols-6">
+        <label className="flex flex-col gap-1">
+          Account
+          <select
+            className="h-8 w-full rounded-sm border border-slate-200 bg-white px-2 text-xs text-slate-700 outline-none focus:border-slate-400"
+            value={selectedAccount}
+            onChange={(event) => onAccountChange(event.target.value)}
+          >
+            <option value="all">All accounts</option>
+            {accounts.map((account) => (
+              <option key={account.id} value={account.id}>
+                {account.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex flex-col gap-1">
+          From
+          <input
+            type="date"
+            className="h-8 w-full rounded-sm border border-slate-200 bg-white px-2 text-xs text-slate-700 outline-none focus:border-slate-400"
+            value={dateRange.start}
+            onChange={(event) =>
+              onDateRangeChange({ start: event.target.value, end: dateRange.end })
+            }
+          />
+        </label>
+        <label className="flex flex-col gap-1">
+          To
+          <input
+            type="date"
+            className="h-8 w-full rounded-sm border border-slate-200 bg-white px-2 text-xs text-slate-700 outline-none focus:border-slate-400"
+            value={dateRange.end}
+            onChange={(event) =>
+              onDateRangeChange({ start: dateRange.start, end: event.target.value })
+            }
+          />
+        </label>
+        <label className="flex flex-col gap-1">
+          Rows
+          <select
+            className="h-8 w-full rounded-sm border border-slate-200 bg-white px-2 text-xs text-slate-700 outline-none focus:border-slate-400"
+            value={pageSize}
+            onChange={(event) => onPageSizeChange(Number(event.target.value))}
+          >
+            {PAGE_SIZE_OPTIONS.map((size) => (
+              <option value={size} key={size}>
+                {size} / page
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex flex-col gap-1">
+          Flow
+          <select
+            className="h-8 w-full rounded-sm border border-slate-200 bg-white px-2 text-xs text-slate-700 outline-none focus:border-slate-400"
+            value={flowFilter}
+            onChange={(event) => onFlowFilterChange(event.target.value)}
+          >
+            {FLOW_FILTERS.map((option) => (
+              <option value={option.value} key={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex flex-col gap-1">
+          Sort
+          <select
+            className="h-8 w-full rounded-sm border border-slate-200 bg-white px-2 text-xs text-slate-700 outline-none focus:border-slate-400"
+            value={sortOption}
+            onChange={(event) => onSortOptionChange(event.target.value)}
+          >
+            {SORT_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+    </div>
+  );
+}
