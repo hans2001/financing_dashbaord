@@ -27,4 +27,10 @@ Keep this managed block so 'openspec update' can refresh the instructions.
   3. Any files beyond `page.tsx` you want refactored in this pass?
   cehck every code file that has rom for refactoring! 
   4. Do you want new tests/coverage targets for the extracted modules before refactor?
-sure, cover all new endpoints and try to kill all crucial mutants if possible!
+  sure, cover all new endpoints and try to kill all crucial mutants if possible!
+
+## Progress log
+
+- Fixed TS errors in `/api/transactions` routes by normalizing undefined strings (transaction names, summary selects) and keeping Prisma payload types aligned.
+- Hardened dashboard state defaults (page size, sort, flow filter, date range) and summary panel props/colors to satisfy strict TypeScript checks.
+- Added safer date formatting helpers to guarantee ISO strings even under `noUncheckedIndexedAccess`.

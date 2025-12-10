@@ -29,6 +29,8 @@ export default function DashboardPage() {
     showingEnd,
     currentPage,
     totalPages,
+    isShowingAllRows,
+    hasPreviousPage,
     hasSelection,
     categoriesToShow,
     categoryEmptyMessage,
@@ -51,6 +53,8 @@ export default function DashboardPage() {
     sortOption,
     setSortOption,
     onPreviousPage,
+    onFirstPage,
+    onLastPage,
     onNextPage,
     hasNextPage,
     onClearSelection,
@@ -117,9 +121,13 @@ export default function DashboardPage() {
                 showingEnd={showingEnd}
                 currentPage={currentPage}
                 totalPages={totalPages}
+                isShowingAllRows={isShowingAllRows}
                 hasSelection={hasSelection}
+                hasPreviousPage={hasPreviousPage}
                 onPreviousPage={onPreviousPage}
+                onFirstPage={onFirstPage}
                 onNextPage={onNextPage}
+                onLastPage={onLastPage}
                 onClearSelection={onClearSelection}
                 hasNextPage={hasNextPage}
                 onDescriptionSaved={handleDescriptionSaved}

@@ -5,6 +5,7 @@ import {
   PAGE_SIZE_OPTIONS,
   SORT_OPTIONS,
 } from "./dashboard-utils";
+import type { PageSizeOptionValue } from "./dashboard-utils";
 
 type FiltersPanelProps = {
   accounts: Account[];
@@ -12,8 +13,8 @@ type FiltersPanelProps = {
   onAccountChange: (value: string) => void;
   dateRange: { start: string; end: string };
   onDateRangeChange: (next: { start: string; end: string }) => void;
-  pageSize: number;
-  onPageSizeChange: (value: number) => void;
+  pageSize: PageSizeOptionValue;
+  onPageSizeChange: (value: PageSizeOptionValue) => void;
   flowFilter: string;
   onFlowFilterChange: (value: string) => void;
   sortOption: string;
@@ -36,9 +37,9 @@ function FiltersPanelComponent({
   return (
     <div className="flex flex-col gap-3">
       <h2 className="text-lg font-semibold text-slate-900">Transactions</h2>
-      <div className="grid w-full gap-3 text-[0.55rem] uppercase tracking-[0.3em] text-slate-500 sm:grid-cols-2 lg:grid-cols-6">
+      <div className="grid w-full gap-3 text-[0.5rem] uppercase tracking-[0.35em] text-slate-400 sm:grid-cols-2 lg:grid-cols-6">
         <label className="flex flex-col gap-1">
-          Account
+          <span className="font-semibold text-slate-500">Account</span>
           <select
             className="h-8 w-full rounded-sm border border-slate-200 bg-white px-2 text-xs text-slate-700 outline-none focus:border-slate-400"
             value={selectedAccount}
@@ -53,7 +54,7 @@ function FiltersPanelComponent({
           </select>
         </label>
         <label className="flex flex-col gap-1">
-          From
+          <span className="font-semibold text-slate-500">From</span>
           <input
             type="date"
             className="h-8 w-full rounded-sm border border-slate-200 bg-white px-2 text-xs text-slate-700 outline-none focus:border-slate-400"
@@ -64,7 +65,7 @@ function FiltersPanelComponent({
           />
         </label>
         <label className="flex flex-col gap-1">
-          To
+          <span className="font-semibold text-slate-500">To</span>
           <input
             type="date"
             className="h-8 w-full rounded-sm border border-slate-200 bg-white px-2 text-xs text-slate-700 outline-none focus:border-slate-400"
@@ -75,21 +76,26 @@ function FiltersPanelComponent({
           />
         </label>
         <label className="flex flex-col gap-1">
-          Rows
+          <span className="font-semibold text-slate-500">Rows</span>
           <select
             className="h-8 w-full rounded-sm border border-slate-200 bg-white px-2 text-xs text-slate-700 outline-none focus:border-slate-400"
-            value={pageSize}
-            onChange={(event) => onPageSizeChange(Number(event.target.value))}
+            value={String(pageSize)}
+            onChange={(event) => {
+              const value = event.target.value;
+              onPageSizeChange(
+                (value === "all" ? "all" : Number(value)) as PageSizeOptionValue,
+              );
+            }}
           >
-            {PAGE_SIZE_OPTIONS.map((size) => (
-              <option value={size} key={size}>
-                {size} / page
+            {PAGE_SIZE_OPTIONS.map((option) => (
+              <option value={String(option.value)} key={option.label}>
+                {option.label}
               </option>
             ))}
           </select>
         </label>
         <label className="flex flex-col gap-1">
-          Flow
+          <span className="font-semibold text-slate-500">Flow</span>
           <select
             className="h-8 w-full rounded-sm border border-slate-200 bg-white px-2 text-xs text-slate-700 outline-none focus:border-slate-400"
             value={flowFilter}
@@ -103,7 +109,7 @@ function FiltersPanelComponent({
           </select>
         </label>
         <label className="flex flex-col gap-1">
-          Sort
+          <span className="font-semibold text-slate-500">Sort</span>
           <select
             className="h-8 w-full rounded-sm border border-slate-200 bg-white px-2 text-xs text-slate-700 outline-none focus:border-slate-400"
             value={sortOption}

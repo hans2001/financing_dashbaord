@@ -108,7 +108,17 @@ export const computeDefaultDateRange = () => {
   };
 };
 
-export const PAGE_SIZE_OPTIONS = [25, 50, 100];
+export const PAGE_SIZE_OPTIONS = [
+  { value: 25, label: "25 / page" },
+  { value: 50, label: "50 / page" },
+  { value: 100, label: "100 / page" },
+  { value: 250, label: "250 / page" },
+  { value: 500, label: "500 / page" },
+  { value: 1000, label: "1000 / page" },
+  { value: "all", label: "Show all results" },
+] as const;
+export type PageSizeOptionValue =
+  (typeof PAGE_SIZE_OPTIONS)[number]["value"];
 export const SORT_OPTIONS = [
   { value: "date_desc", label: "Date (newest first)" },
   { value: "date_asc", label: "Date (oldest first)" },

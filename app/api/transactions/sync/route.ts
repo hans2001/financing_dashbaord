@@ -65,6 +65,18 @@ export async function POST(request: Request) {
         },
       });
 
+      const totalFetched =
+        transactionsResponse.data.transactions?.length ?? 0;
+      console.info(
+        "\x1b[35m[transactions-sync][PLAID_BATCH][PLAID_SYNC_MONITOR]\x1b[0m",
+        JSON.stringify({
+          bankItemId: item.id,
+          requestId: transactionsResponse.data.request_id,
+          totalTransactions: transactionsResponse.data.total_transactions,
+          transactionsInBatch: totalFetched,
+        }),
+      );
+
       const transactions = transactionsResponse.data.transactions ?? [];
       summary.fetched += transactions.length;
 

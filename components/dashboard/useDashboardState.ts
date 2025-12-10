@@ -8,6 +8,7 @@ import {
   PAGE_SIZE_OPTIONS,
   SORT_OPTIONS,
 } from "./dashboard-utils";
+import type { PageSizeOptionValue } from "./dashboard-utils";
 import type {
   Account,
   SummaryResponse,
@@ -25,13 +26,15 @@ type DashboardState = {
   selectedTransactionIds: Set<string>;
   selectedAccount: string;
   dateRange: { start: string; end: string };
-  pageSize: number;
+  pageSize: PageSizeOptionValue;
   sortOption: string;
   flowFilter: string;
   currentPage: number;
   totalPages: number;
   showingStart: number;
   showingEnd: number;
+  isShowingAllRows: boolean;
+  hasPreviousPage: boolean;
   hasNextPage: boolean;
   isAllVisibleSelected: boolean;
   hasSelection: boolean;
@@ -55,11 +58,13 @@ type DashboardActions = {
   toggleSelectRow: (id: string) => void;
   toggleSelectPage: () => void;
   onPreviousPage: () => void;
+  onFirstPage: () => void;
+  onLastPage: () => void;
   onNextPage: () => void;
   onClearSelection: () => void;
   setSelectedAccount: (value: string) => void;
   setDateRange: Dispatch<SetStateAction<{ start: string; end: string }>>;
-  setPageSize: (value: number) => void;
+  setPageSize: (value: PageSizeOptionValue) => void;
   setSortOption: (value: string) => void;
   setFlowFilter: (value: string) => void;
   handleSync: () => Promise<void>;
@@ -83,11 +88,22 @@ export function useDashboardState(): DashboardState & DashboardActions {
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [showAccountsPanel, setShowAccountsPanel] = useState(false);
-  const defaultPageSize = PAGE_SIZE_OPTIONS[0] ?? 25;
+  const DEFAULT_NUMERIC_PAGE_SIZE = 25 as Exclude<PageSizeOptionValue, "all">;
+  const numericDefaultPageSize =
+    (PAGE_SIZE_OPTIONS.find(
+      (option) => option.value !== "all",
+    )?.value as Exclude<PageSizeOptionValue, "all"> | undefined) ??
+    DEFAULT_NUMERIC_PAGE_SIZE;
+  const defaultPageSizeOption: PageSizeOptionValue = PAGE_SIZE_OPTIONS.some(
+    (option) => option.value === "all",
+  )
+    ? "all"
+    : numericDefaultPageSize;
   const defaultSort = SORT_OPTIONS[0]?.value ?? "date_desc";
   const defaultFlowFilter = FLOW_FILTERS[0]?.value ?? "all";
   const [currentPage, setCurrentPage] = useState(0);
-  const [pageSize, setPageSize] = useState<number>(defaultPageSize);
+  const [pageSize, setPageSize] =
+    useState<PageSizeOptionValue>(defaultPageSizeOption);
   const [summaryData, setSummaryData] = useState<SummaryResponse | null>(null);
   const [isLoadingSummary, setIsLoadingSummary] = useState(true);
   const [summaryError, setSummaryError] = useState<string | null>(null);
@@ -162,13 +178,18 @@ export function useDashboardState(): DashboardState & DashboardActions {
     (async () => {
       try {
         const params = new URLSearchParams();
-        params.set("limit", pageSize.toString());
+        if (pageSize === "all") {
+          params.set("limit", "all");
+          params.set("offset", "0");
+        } else {
+          params.set("limit", pageSize.toString());
+          params.set("offset", (currentPage * pageSize).toString());
+        }
         if (selectedAccount !== "all") {
           params.set("accountId", selectedAccount);
         }
         params.set("startDate", dateRange.start);
         params.set("endDate", dateRange.end);
-        params.set("offset", (currentPage * pageSize).toString());
         params.set("sort", sortOption);
         params.set("flow", flowFilter);
 
@@ -317,11 +338,25 @@ export function useDashboardState(): DashboardState & DashboardActions {
     }
   };
 
+  const isShowingAllRows = pageSize === "all";
+  const numericPageSize =
+    typeof pageSize === "number" ? pageSize : numericDefaultPageSize;
   const totalPages =
-    totalTransactions === 0 ? 1 : Math.ceil(totalTransactions / pageSize);
+    totalTransactions === 0 || isShowingAllRows
+      ? 1
+      : Math.ceil(totalTransactions / numericPageSize);
   const showingStart =
-    totalTransactions === 0 ? 0 : currentPage * pageSize + 1;
-  const showingEnd = Math.min(totalTransactions, (currentPage + 1) * pageSize);
+    totalTransactions === 0
+      ? 0
+      : isShowingAllRows
+        ? 1
+        : currentPage * numericPageSize + 1;
+  const showingEnd =
+    totalTransactions === 0
+      ? 0
+      : isShowingAllRows
+        ? totalTransactions
+        : Math.min(totalTransactions, (currentPage + 1) * numericPageSize);
   const hasSelection = selectedTransactionIds.size > 0;
   const selection = useMemo(() => {
     if (selectedTransactionIds.size === 0) {
@@ -404,7 +439,10 @@ export function useDashboardState(): DashboardState & DashboardActions {
   const isAllVisibleSelected =
     transactions.length > 0 &&
     transactions.every((tx) => selectedTransactionIds.has(tx.id));
-  const hasNextPage = (currentPage + 1) * pageSize < totalTransactions;
+  const hasPreviousPage = !isShowingAllRows && currentPage > 0;
+  const hasNextPage =
+    !isShowingAllRows &&
+    (currentPage + 1) * numericPageSize < totalTransactions;
 
   const toggleSelectRow = useCallback(
     (id: string) => {
@@ -434,11 +472,23 @@ export function useDashboardState(): DashboardState & DashboardActions {
     });
   }, [isAllVisibleSelected, transactions]);
 
+  const onFirstPage = () => {
+    if (isShowingAllRows) return;
+    setCurrentPage(0);
+  };
   const onPreviousPage = () => {
+    if (isShowingAllRows) return;
     setCurrentPage((page) => Math.max(page - 1, 0));
   };
   const onNextPage = () => {
+    if (isShowingAllRows) return;
     setCurrentPage((page) => (hasNextPage ? page + 1 : page));
+  };
+  const onLastPage = () => {
+    if (isShowingAllRows) return;
+    setCurrentPage(
+      totalTransactions === 0 ? 0 : Math.max(totalPages - 1, 0),
+    );
   };
   const onClearSelection = () => setSelectedTransactionIds(new Set());
 
@@ -460,6 +510,8 @@ export function useDashboardState(): DashboardState & DashboardActions {
     totalPages,
     showingStart,
     showingEnd,
+    isShowingAllRows,
+    hasPreviousPage,
     hasNextPage,
     isAllVisibleSelected,
     hasSelection,
@@ -480,6 +532,8 @@ export function useDashboardState(): DashboardState & DashboardActions {
     toggleSelectRow,
     toggleSelectPage,
     onPreviousPage,
+    onFirstPage,
+    onLastPage,
     onNextPage,
     onClearSelection,
     setSelectedAccount,

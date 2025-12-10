@@ -17,10 +17,14 @@ type TransactionsTableProps = {
   currentPage: number;
   totalPages: number;
   hasSelection: boolean;
+  isShowingAllRows: boolean;
+  hasPreviousPage: boolean;
+  hasNextPage: boolean;
+  onFirstPage: () => void;
   onPreviousPage: () => void;
   onNextPage: () => void;
+  onLastPage: () => void;
   onClearSelection: () => void;
-  hasNextPage: boolean;
   onDescriptionSaved: (transactionId: string, description: string | null) => void;
 };
 
@@ -38,10 +42,14 @@ function TransactionsTableComponent({
   currentPage,
   totalPages,
   hasSelection,
+  isShowingAllRows,
+  hasPreviousPage,
+  hasNextPage,
+  onFirstPage,
   onPreviousPage,
   onNextPage,
+  onLastPage,
   onClearSelection,
-  hasNextPage,
   onDescriptionSaved,
 }: TransactionsTableProps) {
   return (
@@ -176,13 +184,33 @@ function TransactionsTableComponent({
           </table>
         )}
       </div>
-      <div className="mt-4 flex flex-col gap-2 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-xs text-slate-500">
-          {totalTransactions === 0
-            ? "No transactions to display."
-            : `Showing ${showingStart}-${showingEnd} of ${totalTransactions}`}
-        </p>
-        <div className="flex items-center gap-2">
+      <div className="mt-4 flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="text-[0.75rem] text-slate-500">
+          {totalTransactions === 0 ? (
+            "No transactions to display."
+          ) : isShowingAllRows ? (
+            <>
+              Showing all{" "}
+              <span className="font-semibold text-slate-700">
+                {totalTransactions}
+              </span>{" "}
+              results
+            </>
+          ) : (
+            <>
+              <span className="font-semibold text-slate-700">
+                {showingStart}-{showingEnd}
+              </span>{" "}
+              of {totalTransactions} results
+            </>
+          )}
+          <div className="text-[0.65rem] uppercase tracking-[0.3em] text-slate-400">
+            {isShowingAllRows
+              ? "All rows in this date range"
+              : `Page ${Math.min(currentPage + 1, totalPages)} of ${totalPages}`}
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             className="rounded-full border border-slate-200 px-3 py-1 text-sm text-slate-600 disabled:opacity-40"
@@ -191,25 +219,51 @@ function TransactionsTableComponent({
           >
             Clear selection
           </button>
-          <button
-            type="button"
-            className="rounded-full border border-slate-200 px-3 py-1 text-sm text-slate-600 disabled:opacity-40"
-            onClick={onPreviousPage}
-            disabled={currentPage === 0}
-          >
-            Previous
-          </button>
-          <span className="text-xs text-slate-500">
-            Page {Math.min(currentPage + 1, totalPages)} of {totalPages}
-          </span>
-          <button
-            type="button"
-            className="rounded-full border border-slate-200 px-3 py-1 text-sm text-slate-600 disabled:opacity-40"
-            onClick={onNextPage}
-            disabled={!hasNextPage}
-          >
-            Next
-          </button>
+          <div className="flex items-center gap-1 rounded-full border border-slate-200 bg-white/80 px-2 py-1 text-sm text-slate-600">
+            <button
+              type="button"
+              className="rounded-full px-2 py-0.5 hover:bg-slate-100 disabled:opacity-40"
+              aria-label="Go to first page"
+              title="First page"
+              onClick={onFirstPage}
+              disabled={!hasPreviousPage}
+            >
+              «
+            </button>
+            <button
+              type="button"
+              className="rounded-full px-2 py-0.5 hover:bg-slate-100 disabled:opacity-40"
+              aria-label="Go to previous page"
+              title="Previous page"
+              onClick={onPreviousPage}
+              disabled={!hasPreviousPage}
+            >
+              ‹
+            </button>
+            <span className="px-2 text-[0.75rem] text-slate-500">
+              {Math.min(currentPage + 1, totalPages)}
+            </span>
+            <button
+              type="button"
+              className="rounded-full px-2 py-0.5 hover:bg-slate-100 disabled:opacity-40"
+              aria-label="Go to next page"
+              title="Next page"
+              onClick={onNextPage}
+              disabled={!hasNextPage}
+            >
+              ›
+            </button>
+            <button
+              type="button"
+              className="rounded-full px-2 py-0.5 hover:bg-slate-100 disabled:opacity-40"
+              aria-label="Go to last page"
+              title="Last page"
+              onClick={onLastPage}
+              disabled={!hasNextPage}
+            >
+              »
+            </button>
+          </div>
         </div>
       </div>
     </>

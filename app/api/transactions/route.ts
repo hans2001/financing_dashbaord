@@ -24,8 +24,6 @@ type TransactionRecord = Awaited<
   normalizedCategory?: string | null;
 };
 
-const MAX_PAGE_SIZE = 1000;
-
 export async function GET(request: Request) {
   try {
     const auth = authorizeRequest(request);
@@ -37,13 +35,29 @@ export async function GET(request: Request) {
     const accountId = url.searchParams.get("accountId");
     const startDate = url.searchParams.get("startDate");
     const endDate = url.searchParams.get("endDate");
-    const limitParam = Number(url.searchParams.get("limit") ?? 100);
+    const limitParamRaw = url.searchParams.get("limit");
+    const limitParam =
+      limitParamRaw === null
+        ? 100
+        : limitParamRaw === "all"
+          ? null
+          : Number(limitParamRaw);
     const offsetParam = Number(url.searchParams.get("offset") ?? 0);
     const sortParam = url.searchParams.get("sort") ?? "date_desc";
     const flowParam = url.searchParams.get("flow") ?? "all";
 
-    const limit = Math.min(Math.max(limitParam, 1), MAX_PAGE_SIZE);
-    const offset = Math.max(offsetParam, 0);
+    const limit =
+      limitParam === null
+        ? null
+        : Number.isFinite(limitParam)
+          ? Math.max(Math.floor(limitParam), 1)
+          : 100;
+    const offset =
+      limit === null
+        ? 0
+        : Number.isFinite(offsetParam)
+          ? Math.max(Math.floor(offsetParam), 0)
+          : 0;
 
     const where: TransactionWhereInput = {
       account: {
@@ -111,6 +125,14 @@ export async function GET(request: Request) {
       }
     })();
 
+    const paginationArgs =
+      limit === null
+        ? undefined
+        : ({
+            take: limit,
+            skip: offset,
+          } satisfies Pick<TransactionFindManyArgs, "take" | "skip">);
+
     const [transactions, total] = await Promise.all([
       prisma.transaction.findMany({
         where,
@@ -122,8 +144,7 @@ export async function GET(request: Request) {
           },
         },
         orderBy,
-        take: limit,
-        skip: offset,
+        ...(paginationArgs ?? {}),
       }),
       prisma.transaction.count({ where }),
     ]);

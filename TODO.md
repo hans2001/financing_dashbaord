@@ -13,7 +13,11 @@
 - [x] Protect `api/*` routes with at least a lightweight token/session so Plaid secrets aren’t freely callable in production.
 - [x] Add input validation/ownership checks for the transaction APIs before expanding beyond the demo user to prevent accidental data leaks.
 - [x] Introduce request throttling or caching on `/api/transactions` if the dashboard ends up exposed to larger traffic to avoid overloading Postgres.
-- [ ] Improve page navigation UX and make the filter text lower-contrast / smaller so the controls stay subtle.
+- [x] Improve page navigation UX and make the filter text lower-contrast / smaller so the controls stay subtle.
 - [ ] Build targeted UI/component tests for `FiltersPanel`, `TransactionsTable`, and `SummaryPanel` (React Testing Library + mocked fetch/React Query) so the new modules gorilla-check category sorting/pagination.
 - [ ] Split `useDashboardState` into smaller, focused hooks (e.g., `useTransactionsFilters`, `useSelectionState`, `useSummaryData`) so each concern can be tested and memoized independently.
 - [ ] Add a category filter to the transactions table controls (new dropdown/tag selector) so users can narrow rows to any normalized category; this can sit alongside the existing Flow filter rather than reusing it so preferences stay explicit.
+- [ ] Adopt shadcn/ui (or similar) for shared primitives so buttons, cards, and typography stay consistent across the dashboard without bespoke Tailwind per component.
+- [ ] Introduce a data-fetching helper such as React Query/SWR for accounts, transactions, and summary calls to standardize caching, retries, and background refresh.
+- [ ] Pair `react-hook-form` with Zod schemas for filters and description editing so validation rules, defaults, and types stay in sync.
+- [ ] Expand component/API test coverage using React Testing Library plus supertest/next-test-api-route-handler to hit the “kill crucial mutants” goal.
