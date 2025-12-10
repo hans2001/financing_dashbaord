@@ -52,6 +52,83 @@ const formatCurrency = (value: number) =>
     currency: "USD",
   }).format(value);
 
+const CATEGORY_BADGES: Record<
+  string,
+  { label: string; bg: string; text: string; border: string }
+> = {
+  tuition: {
+    label: "Tuition",
+    bg: "bg-rose-100",
+    text: "text-rose-700",
+    border: "border border-rose-200",
+  },
+  transportation: {
+    label: "Transportation",
+    bg: "bg-orange-100",
+    text: "text-orange-700",
+    border: "border border-orange-200",
+  },
+  food: {
+    label: "Food",
+    bg: "bg-amber-100",
+    text: "text-amber-700",
+    border: "border border-amber-200",
+  },
+  rent: {
+    label: "Rent",
+    bg: "bg-red-100",
+    text: "text-red-700",
+    border: "border border-red-200",
+  },
+  internet: {
+    label: "Internet",
+    bg: "bg-purple-100",
+    text: "text-purple-700",
+    border: "border border-purple-200",
+  },
+  household: {
+    label: "Household",
+    bg: "bg-indigo-100",
+    text: "text-indigo-700",
+    border: "border border-indigo-200",
+  },
+  income: {
+    label: "Income",
+    bg: "bg-sky-100",
+    text: "text-sky-700",
+    border: "border border-sky-200",
+  },
+  business: {
+    label: "Business",
+    bg: "bg-emerald-100",
+    text: "text-emerald-700",
+    border: "border border-emerald-200",
+  },
+  miscellaneous: {
+    label: "Miscellaneous",
+    bg: "bg-cyan-100",
+    text: "text-cyan-700",
+    border: "border border-cyan-200",
+  },
+  uncategorized: {
+    label: "Uncategorized",
+    bg: "bg-slate-100",
+    text: "text-slate-500",
+    border: "border border-slate-200",
+  },
+};
+
+const DEFAULT_CATEGORY = "uncategorized";
+
+const formatTransactionAmount = (amount: number) => formatCurrency(amount);
+
+const getCategoryBadge = (categoryPath?: string) => {
+  const baseCategory =
+    categoryPath?.split(" > ")[0]?.trim().toLowerCase() ??
+    DEFAULT_CATEGORY;
+  return CATEGORY_BADGES[baseCategory] ?? CATEGORY_BADGES[DEFAULT_CATEGORY];
+};
+
 const formatIsoDate = (date: Date) => date.toISOString().split("T")[0];
 
 const computeDefaultDateRange = () => {
@@ -94,7 +171,7 @@ const FAMILY_AUTH_HEADERS = {
   [FAMILY_AUTH_HEADER]: FAMILY_AUTH_SECRET,
 };
 
-const truncateInline = (value: string, maxLength = 25) => {
+const truncateInline = (value: string, maxLength = 70) => {
   if (!value) {
     return value;
   }
@@ -300,7 +377,12 @@ export default function DashboardPage() {
     return () => {
       ignore = true;
     };
-  }, [selectedAccount, dateRange.start, dateRange.end, refreshKey]);
+  }, [
+    selectedAccount,
+    dateRange.start,
+    dateRange.end,
+    refreshKey,
+  ]);
 
   useEffect(() => {
     setCurrentPage(0);
@@ -405,7 +487,7 @@ export default function DashboardPage() {
   const activeIncomeCount = hasSelection ? selectionIncomeCount : summaryIncomeCount;
   const selectionCategoryTotals = useMemo(() => {
     return selectionSpending.reduce<Record<string, number>>((collector, tx) => {
-      const label = tx.category?.[0] ?? "Uncategorized";
+      const label = tx.categoryPath ?? "Uncategorized";
       collector[label] = (collector[label] ?? 0) + Math.abs(tx.amount);
       return collector;
     }, {});
@@ -647,11 +729,11 @@ export default function DashboardPage() {
                 ) : (
                   <table className="min-w-full table-fixed text-left text-xs">
                     <colgroup>
-                      <col style={{ width: "2rem" }} />
-                      <col style={{ width: "4rem" }} />
-                      <col style={{ width: "3rem" }} />
+                      <col style={{ width: "1.5rem" }} />
                       <col style={{ width: "5rem" }} />
-                      <col style={{ width: "10rem" }} />
+                      <col style={{ width: "2rem" }} />
+                      <col style={{ width: "6rem" }} />
+                      <col style={{ width: "6rem" }} />
                       <col style={{ width: "2rem" }} />
                       <col />
                       <col style={{ width: "2rem" }} />
@@ -676,85 +758,92 @@ export default function DashboardPage() {
                       </tr>
                     </thead>
                     <tbody className="text-slate-700">
-                      {transactions.map((tx) => (
-                        <tr
-                          key={tx.id}
-                          className="border-b border-slate-100 text-xs last:border-none"
-                        >
-                          <td>
-                            <input
-                              type="checkbox"
-                              className="h-4 w-4 rounded border-slate-300 text-slate-700 focus:ring-slate-500"
-                              checked={selectedTransactionIds.has(tx.id)}
-                              onChange={() => toggleSelectRow(tx.id)}
-                            />
-                          </td>
-                          <td className="text-[0.75rem] text-slate-500">
-                            <div>{tx.date}</div>
-                            {tx.time && (
-                              <p className="text-[0.65rem] text-slate-400">
-                                {tx.time}
-                              </p>
-                            )}
-                          </td>
-                          <td>
-                            <span
-                              className={
-                                tx.pending
-                                  ? "rounded-full bg-amber-100 px-1.5 text-[0.55rem] font-semibold uppercase tracking-[0.2em] text-amber-700"
-                                  : "rounded-full bg-emerald-100 px-1.5 text-[0.55rem] font-semibold uppercase tracking-[0.2em] text-emerald-700"
-                              }
-                            >
-                              {tx.pending ? "Pending" : "Posted"}
-                            </span>
-                          </td>
-                          <td>{tx.accountName}</td>
-                          <td>
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span
-                                className="text-xs font-medium text-slate-900"
-                                title={tx.merchantName ?? tx.name}
-                              >
-                                {truncateInline(tx.merchantName ?? tx.name)}
-                              </span>
-                            </div>
-                            {(tx.location?.city ||
-                              tx.paymentMeta?.payment_channel) && (
-                                <p className="text-[0.6rem] uppercase tracking-[0.25em] text-slate-400">
-                                  {[tx.location?.city, tx.location?.region]
-                                    .filter(Boolean)
-                                    .join(", ")}
-                                  {tx.paymentMeta?.payment_channel
-                                    ? ` • ${tx.paymentMeta.payment_channel}`
-                                    : ""}
+                      {transactions.map((tx) => {
+                        const categoryBadge = getCategoryBadge(tx.categoryPath);
+                        return (
+                          <tr
+                            key={tx.id}
+                            className="border-b border-slate-100 text-xs last:border-none"
+                          >
+                            <td>
+                              <input
+                                type="checkbox"
+                                className="h-4 w-4 rounded border-slate-300 text-slate-700 focus:ring-slate-500"
+                                checked={selectedTransactionIds.has(tx.id)}
+                                onChange={() => toggleSelectRow(tx.id)}
+                              />
+                            </td>
+                            <td className="text-[0.75rem] text-slate-500">
+                              <div>{tx.date}</div>
+                              {tx.time && (
+                                <p className="text-[0.65rem] text-slate-400">
+                                  {tx.time}
                                 </p>
                               )}
-                          </td>
-                          <td className="text-[0.75rem] text-slate-500">
-                            {tx.categoryPath ?? "Uncategorized"}
-                          </td>
-                          <td className="w-48 text-[0.75rem] text-slate-500">
-                            <div className="flex w-full max-w-full items-center overflow-x-auto whitespace-nowrap">
-                              <DescriptionEditor
-                                transactionId={tx.id}
-                                value={tx.description ?? ""}
-                                onSaved={(next) => handleDescriptionSaved(tx.id, next)}
-                              />
-                            </div>
-                          </td>
-                          <td className="text-right text-sm font-medium">
-                            <span
-                              className={
-                                tx.amount < 0
-                                  ? "text-red-600"
-                                  : "text-emerald-600"
-                              }
-                            >
-                              {formatCurrency(tx.amount)}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
+                            </td>
+                            <td className="min-w-[4rem]">
+                              <span
+                                className={
+                                  tx.pending
+                                    ? "rounded-full bg-amber-100 px-1.5 text-[0.55rem] font-semibold uppercase tracking-[0.2em] text-amber-700"
+                                    : "rounded-full bg-emerald-100 px-1.5 text-[0.55rem] font-semibold uppercase tracking-[0.2em] text-emerald-700"
+                                }
+                              >
+                                {tx.pending ? "Pending" : "Posted"}
+                              </span>
+                            </td>
+                            <td className="min-w-[6rem]">{tx.accountName}</td>
+                            <td className="w-[18rem] max-w-[18rem]">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span
+                                  className="text-xs font-medium text-slate-900"
+                                  title={tx.merchantName ?? tx.name}
+                                >
+                                  {truncateInline(tx.merchantName ?? tx.name)}
+                                </span>
+                              </div>
+                              {(tx.location?.city ||
+                                tx.paymentMeta?.payment_channel) && (
+                                  <p className="text-[0.6rem] uppercase tracking-[0.25em] text-slate-400">
+                                    {[tx.location?.city, tx.location?.region]
+                                      .filter(Boolean)
+                                      .join(", ")}
+                                    {tx.paymentMeta?.payment_channel
+                                      ? ` • ${tx.paymentMeta.payment_channel}`
+                                      : ""}
+                                  </p>
+                                )}
+                            </td>
+                            <td className="text-[0.75rem]">
+                              <span
+                                className={`inline-flex items-center rounded-full px-2 py-0.5 text-[0.55rem] font-semibold uppercase tracking-[0.2em] ${categoryBadge.bg} ${categoryBadge.text} ${categoryBadge.border}`}
+                              >
+                                {categoryBadge.label}
+                              </span>
+                            </td>
+                            <td className="w-[12rem] text-[0.75rem] text-slate-500">
+                              <div className="flex w-full max-w-full items-center overflow-x-auto whitespace-nowrap">
+                                <DescriptionEditor
+                                  transactionId={tx.id}
+                                  value={tx.description ?? ""}
+                                  onSaved={(next) => handleDescriptionSaved(tx.id, next)}
+                                />
+                              </div>
+                            </td>
+                            <td className="text-right text-sm font-medium">
+                              <span
+                                className={
+                                  tx.amount < 0
+                                    ? "text-red-600"
+                                    : "text-emerald-600"
+                                }
+                              >
+                                {formatTransactionAmount(tx.amount)}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 )}
@@ -858,6 +947,26 @@ export default function DashboardPage() {
                   </dt>
                   <dd className="text-[0.7rem] font-semibold text-slate-900">
                     {activeSpendCount} spend · {activeIncomeCount} inflow
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between py-1">
+                  <dt className="text-[0.6rem] uppercase tracking-[0.25em]">
+                    Largest expense
+                  </dt>
+                  <dd className="text-[0.7rem] font-semibold text-red-600">
+                    {activeLargestExpense > 0
+                      ? formatCurrency(-activeLargestExpense)
+                      : "—"}
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between py-1">
+                  <dt className="text-[0.6rem] uppercase tracking-[0.25em]">
+                    Largest inflow
+                  </dt>
+                  <dd className="text-[0.7rem] font-semibold text-emerald-600">
+                    {activeLargestIncome > 0
+                      ? formatCurrency(activeLargestIncome)
+                      : "—"}
                   </dd>
                 </div>
               </dl>

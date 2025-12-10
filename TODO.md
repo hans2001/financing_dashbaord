@@ -13,3 +13,4 @@
 - [x] Protect `api/*` routes with at least a lightweight token/session so Plaid secrets aren’t freely callable in production.
 - [x] Add input validation/ownership checks for the transaction APIs before expanding beyond the demo user to prevent accidental data leaks.
 - [x] Introduce request throttling or caching on `/api/transactions` if the dashboard ends up exposed to larger traffic to avoid overloading Postgres.
+- [ ] Improve page navigation UX and make the filter text lower-contrast / smaller so the controls stay subtle.

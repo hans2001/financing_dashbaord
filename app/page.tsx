@@ -1,7 +1,10 @@
 import Link from "next/link";
 
+const heroTitle = "Production-ready Plaid + Prisma wiring";
+const heroDescription =
+  "Sync your live Plaid production data into Postgres, explore real accounts and transactions, and visualize up-to-date spending insights without leaving the browser.";
 const highlights = [
-  "Connect to Plaid Sandbox using user_good / pass_good credentials.",
+  "Connect to your live Plaid production credentials securely.",
   "Persist users, items, accounts, and transactions in Postgres via Prisma.",
   "View accounts, recent activity, and spending summaries in one dashboard.",
 ];
@@ -15,13 +18,9 @@ export default function HomePage() {
             Personal Finance Dashboard
           </p>
           <h1 className="mt-4 text-4xl font-semibold text-slate-900 md:text-5xl">
-            Sandbox-ready Plaid + Prisma wiring
+            {heroTitle}
           </h1>
-          <p className="mt-4 text-lg text-slate-600">
-            Sync your Plaid Sandbox data into Postgres, explore accounts and
-            transactions, and visualize basic spending insights without leaving
-            your browser.
-          </p>
+          <p className="mt-4 text-lg text-slate-600">{heroDescription}</p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link
               href="/connect"

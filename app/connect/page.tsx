@@ -4,11 +4,14 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { usePlaidLink } from "react-plaid-link";
 
-const sandboxCredentials = [
-  { label: "Username", value: "user_good" },
-  { label: "Password", value: "pass_good" },
-  { label: "2FA", value: "1234 (when prompted)" },
-];
+const environmentLabel = "Plaid Link";
+const environmentTitle = "Connect a real account";
+const environmentCopy =
+"This page uses Plaid Link to open the production flow. After you authenticate with your bank, we swap the public token for an access token and store it securely in Postgres.";
+const environmentStatusText =
+"Production mode — authenticate with your bank when Link opens.";
+const environmentNotes =
+"Plaid never stores your banking password; we only keep the resulting access token tied to your family dashboard.";
 
 export default function ConnectPage() {
   const router = useRouter();
@@ -52,7 +55,26 @@ export default function ConnectPage() {
     };
   }, []);
 
-  const { open, ready } = usePlaidLink({
+const reportLinkExit = async (
+  error: null | { error_code?: string; error_type?: string; display_message?: string },
+  metadata: { link_session_id?: string; institution_id?: string },
+) => {
+  try {
+    await fetch("/api/plaid/link-error", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        error,
+        metadata,
+        timestamp: new Date().toISOString(),
+      }),
+    });
+  } catch (err) {
+    console.warn("Unable to log Plaid Link exit", err);
+  }
+};
+
+const { open, ready } = usePlaidLink({
     token: linkToken ?? "",
     onSuccess: async (public_token) => {
       setIsExchanging(true);
@@ -81,10 +103,11 @@ export default function ConnectPage() {
         setIsExchanging(false);
       }
     },
-    onExit: (error) => {
+    onExit: (error, metadata) => {
       if (error) {
         setExchangeError(error.display_message ?? error.error_message ?? null);
       }
+      reportLinkExit(error, metadata);
     },
   });
 
@@ -93,16 +116,12 @@ export default function ConnectPage() {
       <div className="mx-auto max-w-4xl space-y-8">
         <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-md shadow-slate-900/5">
           <p className="text-sm font-semibold uppercase tracking-[0.3em] text-[#0f5ef2]">
-            Plaid Sandbox Link
+            {environmentLabel} Plaid Link
           </p>
           <h1 className="mt-3 text-3xl font-semibold text-slate-900">
-            Connect a test account
+            {environmentTitle}
           </h1>
-          <p className="mt-2 text-base text-slate-600">
-            This page uses Plaid Link to issue a sandbox credential flow. Once
-            you complete the Link experience, Plaid will return a public token,
-            which we exchange for an access token and persist in Postgres.
-          </p>
+          <p className="mt-2 text-base text-slate-600">{environmentCopy}</p>
 
           <div className="mt-6 flex flex-wrap gap-3">
             <button
@@ -123,8 +142,13 @@ export default function ConnectPage() {
                 ? "Preparing Link..."
                 : "Launch Plaid Link"}
             </button>
-            <div className="flex items-center rounded-full border border-slate-200 px-4 py-2 text-sm text-slate-600">
-              Sandbox mode &mdash; username: <strong className="ml-1">user_good</strong>
+            <div className="flex flex-wrap items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm text-slate-600">
+              <span className="text-sm font-semibold text-slate-900">
+                Production mode
+              </span>
+              <span className="text-xs text-slate-500 sm:text-sm">
+                {environmentStatusText}
+              </span>
             </div>
           </div>
 
@@ -137,23 +161,9 @@ export default function ConnectPage() {
 
           <div className="mt-8 rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 p-4">
             <h2 className="text-sm font-semibold uppercase tracking-[0.3em] text-slate-500">
-              Sandbox credentials
+              Production notes
             </h2>
-            <dl className="mt-4 grid gap-2 text-sm text-slate-700 sm:grid-cols-3">
-              {sandboxCredentials.map((item) => (
-                <div
-                  key={item.label}
-                  className="rounded-xl bg-white/80 p-3 shadow-sm shadow-slate-900/5"
-                >
-                  <dt className="text-[0.7rem] uppercase tracking-[0.3em] text-slate-500">
-                    {item.label}
-                  </dt>
-                  <dd className="mt-1 text-base font-semibold text-slate-900">
-                    {item.value}
-                  </dd>
-                </div>
-              ))}
-            </dl>
+            <p className="mt-4 text-sm text-slate-600">{environmentNotes}</p>
           </div>
         </section>
       </div>

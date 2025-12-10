@@ -2,12 +2,12 @@
 
 ## Stack overview
 - **Next.js** + React for the frontend experience (pages: landing, `/connect`, `/dashboard`).
-- **Plaid sandbox** for transaction ingestion; backend handles link token issuance, public token exchange, and transaction sync via Plaid’s APIs.
+- **Plaid production** for transaction ingestion; backend handles link token issuance, public token exchange, and transaction sync via Plaid’s APIs.
 - **Prisma + Postgres** store users, bank items, accounts, and transactions with migration workflow under `prisma/`.
 - **Tailwind CSS** for responsive cards, tables, and utility-first styling.
 
 ## Features
-- `/api/plaid/create-link-token`: issues link tokens for the sandbox flow.
+- `/api/plaid/create-link-token`: issues link tokens for the production flow.
 - `/api/plaid/exchange-public-token`: swaps public tokens for access tokens, upserts Plaid items and accounts.
 - `/api/transactions/sync`: fetches transactions from Plaid, upserts to Postgres, and reports sync metrics.
 - `/api/accounts` and `/api/transactions`: provide filtered account/transaction data to the UI, with highest-level spending insights on `/dashboard`.

@@ -3,6 +3,10 @@ import { DEMO_USER_ID } from "@/lib/demo-user";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { authorizeRequest } from "@/lib/family-auth";
+import {
+  dropConfSuffix,
+  getTransactionCategoryPath,
+} from "@/lib/transaction-category";
 
 type TransactionFindManyArgs = NonNullable<
   Parameters<typeof prisma.transaction.findMany>[0]
@@ -17,6 +21,7 @@ type TransactionRecord = Awaited<
       institutionName?: string | null;
     };
   };
+  normalizedCategory?: string | null;
 };
 
 const MAX_PAGE_SIZE = 1000;
@@ -127,8 +132,12 @@ export async function GET(request: Request) {
       total,
       transactions: transactions.map((transaction: TransactionRecord) => {
         const categoryPath =
-          (transaction.category ?? []).filter(Boolean).join(" > ") ||
-          "Uncategorized";
+          transaction.normalizedCategory ??
+          getTransactionCategoryPath({
+            merchantName: transaction.merchantName ?? transaction.name,
+            name: transaction.name,
+            category: transaction.category,
+          });
         const rawData = transaction.raw as Record<string, unknown> | null;
         const occurredAtRaw =
           typeof rawData?.datetime === "string" ? rawData.datetime : null;
@@ -145,8 +154,10 @@ export async function GET(request: Request) {
           accountName: transaction.account.name,
           amount: Number(transaction.amount.toString()),
           description: transaction.description ?? null,
-          merchantName: transaction.merchantName ?? transaction.name,
-          name: transaction.name,
+          merchantName: dropConfSuffix(
+            transaction.merchantName ?? transaction.name,
+          ),
+          name: dropConfSuffix(transaction.name),
           category: transaction.category,
           categoryPath,
           pending: transaction.pending,

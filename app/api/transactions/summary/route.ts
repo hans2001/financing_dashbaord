@@ -4,11 +4,10 @@ import { jsonErrorResponse } from "@/lib/api-response";
 import { DEMO_USER_ID } from "@/lib/demo-user";
 import { prisma } from "@/lib/prisma";
 import { authorizeRequest } from "@/lib/family-auth";
-
-type TransactionFindManyArgs = NonNullable<
+import { getTransactionCategoryPath } from "@/lib/transaction-category";
+type TransactionWhereInput = NonNullable<
   Parameters<typeof prisma.transaction.findMany>[0]
->;
-type TransactionWhereInput = NonNullable<TransactionFindManyArgs["where"]>;
+>["where"];
 
 const SUMMARY_CHUNK_SIZE = 1000;
 
@@ -33,7 +32,6 @@ export async function GET(request: Request) {
     const accountId = url.searchParams.get("accountId");
     const startDate = url.searchParams.get("startDate");
     const endDate = url.searchParams.get("endDate");
-
     const where: TransactionWhereInput = {
       account: {
         bankItem: {
@@ -82,10 +80,6 @@ export async function GET(request: Request) {
     while (true) {
       const batch = await prisma.transaction.findMany({
         where,
-        select: {
-          amount: true,
-          category: true,
-        },
         orderBy: {
           date: "desc",
         },
@@ -100,13 +94,21 @@ export async function GET(request: Request) {
       offset += batch.length;
 
       for (const transaction of batch) {
-        const amount = Number(transaction.amount.toString());
+        const amount = transaction.amount.toNumber
+          ? transaction.amount.toNumber()
+          : Number(transaction.amount.toString());
         if (amount < 0) {
           const absAmount = Math.abs(amount);
           totalSpent += absAmount;
           largestExpense = Math.max(largestExpense, absAmount);
           spendCount += 1;
-          const label = transaction.category?.[0] ?? "Uncategorized";
+          const label =
+            transaction.normalizedCategory ??
+            getTransactionCategoryPath({
+              category: transaction.category,
+              name: transaction.name,
+              merchantName: transaction.merchantName,
+            });
           categoryTotals[label] = (categoryTotals[label] ?? 0) + absAmount;
         } else if (amount > 0) {
           totalIncome += amount;

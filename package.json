@@ -2,14 +2,18 @@
   "name": "finance_dashboard",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
+    "dev:no-hmr": "NEXT_DISABLE_HMR=1 next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "mutation": "stryker run stryker.conf.cjs",
+    "set-base-url": "node ./scripts/set-app-base-url.js",
+    "refresh-demo-data": "node ./scripts/refresh-bank-items.mjs",
     "prepare": "husky install"
   },
   "dependencies": {
@@ -33,6 +37,7 @@
     "@types/react-dom": "^19",
     "@vitest/coverage-v8": "^4.0.14",
     "baseline-browser-mapping": "^2.8.32",
+    "dotenv": "^17.2.3",
     "eslint": "^9",
     "eslint-config-next": "16.0.5",
     "husky": "^9.1.7",

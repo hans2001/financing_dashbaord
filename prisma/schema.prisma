@@ -60,6 +60,7 @@ model Transaction {
   isoCurrencyCode    String?
   pending            Boolean
   category           String[]
+  normalizedCategory String    @default("Uncategorized")
   raw                Json?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt

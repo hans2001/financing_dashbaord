@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     template: "%s | Personal Finance Dashboard",
   },
   description:
-    "Connect Plaid sandbox accounts, sync transactions, and view spending insights.",
+    "Connect Plaid production accounts, sync transactions, and view spending insights.",
 };
 
 export default function RootLayout({

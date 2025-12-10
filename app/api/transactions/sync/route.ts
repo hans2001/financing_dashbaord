@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { plaidClient } from "@/lib/plaid";
 import { NextResponse } from "next/server";
 import { authorizeRequest } from "@/lib/family-auth";
+import { Prisma } from "@prisma/client";
+import { getTransactionCategoryPath } from "@/lib/transaction-category";
 
 const DEFAULT_LOOKBACK_DAYS = 90;
 
@@ -89,32 +91,45 @@ export async function POST(request: Request) {
         }
 
         const normalizedTx = JSON.parse(JSON.stringify(tx));
+        const normalizedCategory = getTransactionCategoryPath({
+          merchantName: tx.merchant_name,
+          name: tx.name,
+          category: tx.category,
+          amount: Number(tx.amount),
+        });
+        const normalizedAmount = -(tx.amount ?? 0);
+
+        const updatePayload: Prisma.TransactionUncheckedUpdateInput = {
+          accountId: account.id,
+          amount: normalizedAmount,
+          category: tx.category ?? [],
+          date: new Date(tx.date),
+          isoCurrencyCode: tx.iso_currency_code ?? null,
+          merchantName: tx.merchant_name ?? null,
+          name: tx.name,
+          pending: tx.pending,
+          raw: normalizedTx,
+          normalizedCategory,
+        };
+
+        const createPayload: Prisma.TransactionUncheckedCreateInput = {
+          accountId: account.id,
+          plaidTransactionId: tx.transaction_id,
+          amount: normalizedAmount,
+          category: tx.category ?? [],
+          date: new Date(tx.date),
+          isoCurrencyCode: tx.iso_currency_code ?? null,
+          merchantName: tx.merchant_name ?? null,
+          name: tx.name,
+          pending: tx.pending,
+          raw: normalizedTx,
+          normalizedCategory,
+        };
 
         await prisma.transaction.upsert({
           where: { plaidTransactionId: tx.transaction_id },
-          update: {
-            accountId: account.id,
-            amount: tx.amount.toString(),
-            category: tx.category ?? [],
-            date: new Date(tx.date),
-            isoCurrencyCode: tx.iso_currency_code ?? null,
-            merchantName: tx.merchant_name ?? null,
-            name: tx.name,
-            pending: tx.pending,
-            raw: normalizedTx,
-          },
-          create: {
-            accountId: account.id,
-            plaidTransactionId: tx.transaction_id,
-            amount: tx.amount.toString(),
-            category: tx.category ?? [],
-            date: new Date(tx.date),
-            isoCurrencyCode: tx.iso_currency_code ?? null,
-            merchantName: tx.merchant_name ?? null,
-            name: tx.name,
-            pending: tx.pending,
-            raw: normalizedTx,
-          },
+          update: updatePayload,
+          create: createPayload,
         });
       }
     }
