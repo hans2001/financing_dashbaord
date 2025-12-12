@@ -1,0 +1,118 @@
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
+
+import { FAMILY_AUTH_HEADERS } from "../dashboard-utils";
+import type { Transaction } from "../types";
+
+export type TransactionsQueryResult = {
+  transactions: Transaction[];
+  total: number;
+};
+
+type TransactionsArgs = {
+  selectedAccount: string;
+  dateRange: { start: string; end: string };
+  pageSize: number | "all";
+  currentPage: number;
+  sortOption: string;
+  flowFilter: string;
+  refreshKey: number;
+  hasDateRange: boolean;
+};
+
+const EMPTY_RESULT: TransactionsQueryResult = {
+  transactions: [],
+  total: 0,
+};
+
+export function useTransactionsData({
+  selectedAccount,
+  dateRange,
+  pageSize,
+  currentPage,
+  sortOption,
+  flowFilter,
+  refreshKey,
+  hasDateRange,
+}: TransactionsArgs) {
+  const queryKey = useMemo(
+    () =>
+      [
+        "transactions",
+        selectedAccount,
+        dateRange.start,
+        dateRange.end,
+        pageSize,
+        currentPage,
+        sortOption,
+        flowFilter,
+        refreshKey,
+      ] as const,
+    [
+      selectedAccount,
+      dateRange.start,
+      dateRange.end,
+      pageSize,
+      currentPage,
+      sortOption,
+      flowFilter,
+      refreshKey,
+    ],
+  );
+  const transactionsQuery = useQuery<TransactionsQueryResult>({
+    queryKey,
+    enabled: hasDateRange,
+    placeholderData: keepPreviousData,
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (pageSize === "all") {
+        params.set("limit", "all");
+        params.set("offset", "0");
+      } else {
+        params.set("limit", pageSize.toString());
+        params.set("offset", (currentPage * pageSize).toString());
+      }
+      if (selectedAccount !== "all") {
+        params.set("accountId", selectedAccount);
+      }
+      params.set("startDate", dateRange.start);
+      params.set("endDate", dateRange.end);
+      params.set("sort", sortOption);
+      params.set("flow", flowFilter);
+
+      const response = await fetch(`/api/transactions?${params.toString()}`, {
+        headers: FAMILY_AUTH_HEADERS,
+      });
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload?.error ?? "Unable to load transactions");
+      }
+      return {
+        transactions: payload.transactions ?? [],
+        total: payload.total ?? 0,
+      };
+    },
+  });
+
+  const transactionsPayload = transactionsQuery.data ?? EMPTY_RESULT;
+  const transactions = transactionsPayload.transactions;
+  const totalTransactions = transactionsPayload.total;
+  const isLoadingTransactions =
+    !hasDateRange || transactionsQuery.isPending;
+  const transactionsError =
+    !hasDateRange
+      ? null
+      : transactionsQuery.error instanceof Error
+        ? transactionsQuery.error.message
+        : transactionsQuery.error
+          ? "Failed to fetch transactions"
+          : null;
+
+  return {
+    transactions,
+    totalTransactions,
+    isLoadingTransactions,
+    transactionsError,
+    queryKey,
+  };
+}

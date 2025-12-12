@@ -21,3 +21,23 @@
 - [ ] Introduce a data-fetching helper such as React Query/SWR for accounts, transactions, and summary calls to standardize caching, retries, and background refresh.
 - [ ] Pair `react-hook-form` with Zod schemas for filters and description editing so validation rules, defaults, and types stay in sync.
 - [ ] Expand component/API test coverage using React Testing Library plus supertest/next-test-api-route-handler to hit the “kill crucial mutants” goal.
+- [ ] Layer on lightweight budgeting goals (per-category and household) that highlight spend vs. target so overages stand out immediately.
+- [ ] Add a forward-looking cash-flow panel that projects month-end balance based on historical averages plus scheduled bills.
+- [ ] Introduce shared saved views/workspaces so Hans and Yuki can pin their own account selections and column presets, including a “family view” that aggregates every linked account plus user-specific filters.
+- [ ] Provide configurable alerts (email/push/webhooks) for suspicious spikes, large transfers, or low balances to help catch issues without babysitting the dashboard.
+
+## Performance plan
+
+- [ ] Capture baseline metrics (TTFB, LCP, React commit times) using Next.js profiler + Web Vitals logging so we know what to optimize.
+- [ ] Analyze bundle composition and convert large dashboard-only components (charts, tables) to dynamic imports or streaming so above-the-fold work shrinks.
+- [ ] Virtualize the transactions table and memoize row renderers to avoid re-rendering hundreds of DOM nodes on filter or pagination changes.
+- [ ] Batch and cache data access (React Query/SWR for client caching, API-layer response caching, background refresh) to cut redundant fetches.
+- [ ] Precompute summary widgets on the server (edge cache or scheduled jobs) and hydrate them as static props so we avoid heavy client calculations.
+- [ ] Defer non-critical analytics/components with `useDeferredValue`/`useTransition` hooks so filtering stays responsive.
+- [ ] Profile expensive hooks like `useDashboardState`/`useSelectionState` and split responsibilities so state updates stay localized.
+
+### Timeline / readiness
+
+- Q3 (current): Monitor size/perf casually but defer all optimization work; codebase + data volume still small.
+- Q4: Re-evaluate once shared workspaces + category filters ship and data balloons past ~10k transactions; only then kickoff baseline capture task.
+- 2025+ or >25k monthly rows: prioritize virtualization/caching tasks; until then, keep them parked so we focus on shipping core features.

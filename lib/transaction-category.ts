@@ -22,6 +22,7 @@ const CATEGORY_OVERRIDE_RULES: Array<{
   { keywords: ["zelle payment to"], label: "Miscellaneous" },
   { keywords: ["uber"], label: "Transportation" },
   { keywords: ["mbta"], label: "Transportation" },
+  { keywords: ["metro"], label: "Transportation" },
 ];
 
 export const dropConfSuffix = (value?: string | null) => {

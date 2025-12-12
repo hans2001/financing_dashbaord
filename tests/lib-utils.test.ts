@@ -67,6 +67,26 @@ describe("family authorization utilities", () => {
     return familyAuth;
   };
 
+  it("throws during module load when the secret is missing or too short", async () => {
+    vi.resetModules();
+    setEnvValues({
+      FAMILY_AUTH_TOKEN: undefined,
+      NEXT_PUBLIC_FAMILY_AUTH_TOKEN: undefined,
+    });
+    await expect(import("@/lib/family-auth")).rejects.toThrow(
+      "FAMILY_AUTH_TOKEN must be set",
+    );
+
+    vi.resetModules();
+    setEnvValues({
+      FAMILY_AUTH_TOKEN: "short",
+      NEXT_PUBLIC_FAMILY_AUTH_TOKEN: undefined,
+    });
+    await expect(import("@/lib/family-auth")).rejects.toThrow(
+      "FAMILY_AUTH_TOKEN must be at least 16 characters",
+    );
+  });
+
   it("allows requests that present the family secret header", async () => {
     const familyAuth = await loadFamilyAuthModule();
     const secret = familyAuth.getFamilyHeaderValue();
@@ -120,6 +140,64 @@ describe("family authorization utilities", () => {
     expect(await second.response.json()).toEqual({
       error: "Rate limit exceeded",
     });
+  });
+
+  it("rate limits invalid attempts per client IP", async () => {
+    const familyAuth = await loadFamilyAuthModule({
+      FAMILY_RATE_LIMIT_MAX: "1",
+    });
+    const request = new Request("https://example.com", {
+      headers: { "x-family-secret": "wrong-secret" },
+    });
+
+    const first = familyAuth.authorizeRequest(request);
+    expect(first.ok).toBe(false);
+    if (first.ok) {
+      throw new Error("Expected authorization to fail");
+    }
+    expect(first.response.status).toBe(403);
+
+    const second = familyAuth.authorizeRequest(request);
+    expect(second.ok).toBe(false);
+    if (second.ok) {
+      throw new Error("Expected rate limit to trigger");
+    }
+    expect(second.response.status).toBe(429);
+  });
+
+  it("authorizes requests that only have the secure cookie", async () => {
+    const familyAuth = await loadFamilyAuthModule();
+    const secret = familyAuth.getFamilyHeaderValue();
+    const request = new Request("https://example.com", {
+      headers: {
+        cookie: `__Secure-family-secret=${secret}`,
+      },
+    });
+    const result = familyAuth.authorizeRequest(request);
+    expect(result.ok).toBe(true);
+  });
+
+  it("rate limits repeated invalid cookie attempts", async () => {
+    const familyAuth = await loadFamilyAuthModule({
+      FAMILY_RATE_LIMIT_MAX: "1",
+    });
+    const request = new Request("https://example.com", {
+      headers: {
+        cookie: "__Secure-family-secret=wrong",
+      },
+    });
+    const first = familyAuth.authorizeRequest(request);
+    expect(first.ok).toBe(false);
+    if (first.ok) {
+      throw new Error("Expected first cookie attempt to fail");
+    }
+    expect(first.response.status).toBe(403);
+    const second = familyAuth.authorizeRequest(request);
+    expect(second.ok).toBe(false);
+    if (second.ok) {
+      throw new Error("Expected rate limit for cookie attempt");
+    }
+    expect(second.response.status).toBe(429);
   });
 });
 
