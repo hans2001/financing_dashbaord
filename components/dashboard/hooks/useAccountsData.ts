@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 
-import { FAMILY_AUTH_HEADERS } from "../dashboard-utils";
+import { FAMILY_AUTH_HEADERS, isBalanceStale } from "../dashboard-utils";
 import type { Account } from "../types";
 
 type AccountsArgs = {
@@ -18,7 +18,11 @@ export function useAccountsData({ refreshKey }: AccountsArgs) {
       if (!response.ok) {
         throw new Error(payload?.error ?? "Unable to load accounts");
       }
-      return payload.accounts ?? [];
+      const accounts = payload.accounts ?? [];
+      return accounts.map((account: Account) => ({
+        ...account,
+        isBalanceStale: isBalanceStale(account.balanceLastUpdated),
+      }));
     },
   });
 

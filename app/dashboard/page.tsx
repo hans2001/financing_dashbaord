@@ -1,8 +1,9 @@
 'use client'
 
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useState } from "react";
 
 import { FiltersPanel } from "@/components/dashboard/FiltersPanel";
+import { LinkedAccountsPanel } from "@/components/dashboard/LinkedAccountsPanel";
 import { TransactionsTable } from "@/components/dashboard/TransactionsTable";
 import { useDashboardState } from "@/components/dashboard/useDashboardState";
 
@@ -13,6 +14,7 @@ const SummaryPanel = lazy(() =>
 );
 
 export default function DashboardPage() {
+  const [areFiltersCollapsed, setAreFiltersCollapsed] = useState(true);
   const {
     accounts,
     isLoadingAccounts,
@@ -50,6 +52,9 @@ export default function DashboardPage() {
     setDateRange,
     flowFilter,
     setFlowFilter,
+    categoryFilter,
+    setCategoryFilter,
+    categoryOptions,
     sortOption,
     setSortOption,
     onPreviousPage,
@@ -105,8 +110,15 @@ export default function DashboardPage() {
                 onPageSizeChange={setPageSize}
                 flowFilter={flowFilter}
                 onFlowFilterChange={setFlowFilter}
+                categoryFilter={categoryFilter}
+                onCategoryFilterChange={setCategoryFilter}
+                categoryOptions={categoryOptions}
                 sortOption={sortOption}
                 onSortOptionChange={setSortOption}
+                isCollapsed={areFiltersCollapsed}
+                onToggleCollapsed={() =>
+                  setAreFiltersCollapsed((previous) => !previous)
+                }
               />
               <TransactionsTable
                 transactions={transactions}
@@ -157,60 +169,15 @@ export default function DashboardPage() {
                 categoryEmptyMessage={categoryEmptyMessage}
               />
             </Suspense>
-            <div className="flex min-h-0 flex-col rounded-2xl border border-slate-200 bg-white/90 p-3 shadow-sm shadow-slate-900/5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-[0.55rem] uppercase tracking-[0.3em] text-slate-400">
-                    Linked accounts
-                  </p>
-                  <p className="text-sm font-semibold text-slate-900">
-                    {accounts.length} connected
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  className="text-[0.6rem] font-semibold uppercase tracking-[0.2em] text-slate-500 underline-offset-2 hover:text-slate-800"
-                  onClick={() => setShowAccountsPanel((prev) => !prev)}
-                >
-                  {showAccountsPanel ? "Less" : "Details"}
-                </button>
-              </div>
-              {isLoadingAccounts ? (
-                <p className="mt-4 text-sm text-slate-500">
-                  Loading linked accounts…
-                </p>
-              ) : accountsError ? (
-                <p className="mt-4 text-sm text-red-600">{accountsError}</p>
-              ) : (
-                <div className="mt-2 flex-1 overflow-y-auto pr-1 text-[0.85rem] text-slate-700">
-                  {(showAccountsPanel ? accounts : accounts.slice(0, 4)).map(
-                    (account) => (
-                      <div
-                        key={account.id}
-                        className="flex items-center justify-between border-b border-slate-100 py-1 text-sm last:border-none"
-                      >
-                        <div>
-                          <p className="font-medium text-slate-900">
-                            {account.name}
-                          </p>
-                          <p className="text-[0.6rem] text-slate-500">
-                            {account.institutionName ?? "Plaid"}
-                          </p>
-                        </div>
-                        <p className="text-[0.6rem] uppercase tracking-[0.2em] text-slate-400">
-                          {account.type}
-                        </p>
-                      </div>
-                    ),
-                  )}
-                  {accounts.length > 4 && !showAccountsPanel && (
-                    <p className="pt-2 text-[0.6rem] uppercase tracking-[0.25em] text-slate-400">
-                      +{accounts.length - 4} more
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
+            <LinkedAccountsPanel
+              accounts={accounts}
+              isLoading={isLoadingAccounts}
+              error={accountsError}
+              showAll={showAccountsPanel}
+              onToggleShow={() => setShowAccountsPanel((prev) => !prev)}
+              onRefresh={handleSync}
+              isSyncing={isSyncing}
+            />
           </div>
         </section>
       </div>

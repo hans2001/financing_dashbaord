@@ -57,4 +57,20 @@ describe("useDashboardFilters", () => {
     expect(result.current.isShowingAllRows).toBe(true);
     expect(result.current.numericPageSize).toBeGreaterThan(0);
   });
+
+  it("resets pagination when category filter changes", () => {
+    const { result } = renderHook(() => useDashboardFilters());
+
+    act(() => {
+      result.current.setCurrentPage(4);
+    });
+    expect(result.current.currentPage).toBe(4);
+
+    act(() => {
+      result.current.setCategoryFilter("Food");
+    });
+
+    expect(result.current.currentPage).toBe(0);
+    expect(result.current.categoryFilter).toBe("Food");
+  });
 });

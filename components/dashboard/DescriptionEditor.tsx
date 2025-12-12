@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 import { FAMILY_AUTH_HEADERS, truncateInline } from "./dashboard-utils";
+import {
+  descriptionSchema,
+  DESCRIPTION_MAX_LENGTH,
+  DescriptionFormValues,
+} from "./forms/descriptionForm";
 
 type DescriptionEditorProps = {
   transactionId: string;
@@ -9,19 +15,21 @@ type DescriptionEditorProps = {
   onSaved: (description: string | null) => void;
 };
 
-type DescriptionFormValues = {
-  description: string;
-};
-
 export function DescriptionEditor({
   transactionId,
   value,
   onSaved,
 }: DescriptionEditorProps) {
-  const { register, handleSubmit, reset } =
-    useForm<DescriptionFormValues>({
-      defaultValues: { description: value ?? "" },
-    });
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<DescriptionFormValues>({
+    defaultValues: { description: value ?? "" },
+    resolver: zodResolver(descriptionSchema),
+    mode: "all",
+  });
   const [status, setStatus] = useState<
     "idle" | "saving" | "success" | "error"
   >("idle");
@@ -96,7 +104,7 @@ export function DescriptionEditor({
         {...register("description")}
         className="min-h-[1.75rem] w-full rounded border border-slate-200 bg-white px-2 text-xs text-slate-700 outline-none focus:border-slate-400"
         placeholder="Add notes"
-        maxLength={300}
+        maxLength={DESCRIPTION_MAX_LENGTH}
         disabled={status === "saving"}
         autoFocus
         style={{ overflowX: "auto", whiteSpace: "nowrap" }}
@@ -118,7 +126,9 @@ export function DescriptionEditor({
       {isEditing ? editView : readOnlyView}
       <div className="h-0 text-[0.6rem]">
         {isEditing &&
-          (errorMessage ? (
+          (errors.description ? (
+            <p className="text-red-600">{errors.description.message}</p>
+          ) : errorMessage ? (
             <p className="text-red-600">{errorMessage}</p>
           ) : status === "success" ? (
             <p className="text-emerald-600">Saved</p>

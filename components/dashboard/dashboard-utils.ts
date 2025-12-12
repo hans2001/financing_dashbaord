@@ -5,6 +5,18 @@ export const FAMILY_AUTH_HEADERS = {
   [FAMILY_AUTH_HEADER]: FAMILY_AUTH_SECRET,
 };
 
+export const BALANCE_STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000;
+
+export const isBalanceStale = (balanceLastUpdated?: string | null) => {
+  if (!balanceLastUpdated) {
+    return true;
+  }
+  const timestamp = new Date(balanceLastUpdated).getTime();
+  return Number.isNaN(timestamp)
+    ? true
+    : Date.now() - timestamp > BALANCE_STALE_THRESHOLD_MS;
+};
+
 export const formatCurrency = (value: number) =>
   new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -126,12 +138,14 @@ export const SORT_OPTIONS = [
   { value: "amount_asc", label: "Amount (low → high)" },
   { value: "merchant_asc", label: "Merchant (A → Z)" },
   { value: "merchant_desc", label: "Merchant (Z → A)" },
-];
+] as const;
+export type SortOptionValue = (typeof SORT_OPTIONS)[number]["value"];
 export const FLOW_FILTERS = [
   { value: "all", label: "All activity" },
   { value: "spending", label: "Spending only" },
   { value: "inflow", label: "Income only" },
-];
+] as const;
+export type FlowFilterValue = (typeof FLOW_FILTERS)[number]["value"];
 
 export const CATEGORY_PIE_COLORS = [
   "#0f5ef2",

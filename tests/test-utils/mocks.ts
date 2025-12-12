@@ -10,6 +10,7 @@ const createMockFn = () => vi.fn<StandardFunction>();
 
 export const authorizeRequestMock = vi.fn<(request: Request) => AuthorizationResult>();
 export const ensureDemoUserMock = vi.fn<() => Promise<{ id: string }>>();
+export const refreshAccountBalancesMock = createMockFn();
 
 export const prismaMock: Record<string, PrismaCollection> = {
   account: {
@@ -41,6 +42,7 @@ export const plaidClientMock: PlaidClientCollection = {
   itemGet: createMockFn(),
   institutionsGetById: createMockFn(),
   accountsGet: createMockFn(),
+  accountsBalanceGet: createMockFn(),
 };
 
 export function resetMocks() {
@@ -52,4 +54,5 @@ export function resetMocks() {
   });
 
   Object.values(plaidClientMock).forEach((mock) => mock.mockReset());
+  refreshAccountBalancesMock.mockReset();
 }

@@ -3,6 +3,10 @@ import { useMemo } from "react";
 
 import { FAMILY_AUTH_HEADERS } from "../dashboard-utils";
 import type { Transaction } from "../types";
+import type {
+  FlowFilterValue,
+  SortOptionValue,
+} from "../dashboard-utils";
 
 export type TransactionsQueryResult = {
   transactions: Transaction[];
@@ -14,8 +18,9 @@ type TransactionsArgs = {
   dateRange: { start: string; end: string };
   pageSize: number | "all";
   currentPage: number;
-  sortOption: string;
-  flowFilter: string;
+  sortOption: SortOptionValue;
+  flowFilter: FlowFilterValue;
+  categoryFilter: string;
   refreshKey: number;
   hasDateRange: boolean;
 };
@@ -32,6 +37,7 @@ export function useTransactionsData({
   currentPage,
   sortOption,
   flowFilter,
+  categoryFilter,
   refreshKey,
   hasDateRange,
 }: TransactionsArgs) {
@@ -46,6 +52,7 @@ export function useTransactionsData({
         currentPage,
         sortOption,
         flowFilter,
+        categoryFilter,
         refreshKey,
       ] as const,
     [
@@ -56,6 +63,7 @@ export function useTransactionsData({
       currentPage,
       sortOption,
       flowFilter,
+      categoryFilter,
       refreshKey,
     ],
   );
@@ -79,6 +87,9 @@ export function useTransactionsData({
       params.set("endDate", dateRange.end);
       params.set("sort", sortOption);
       params.set("flow", flowFilter);
+      if (categoryFilter !== "all") {
+        params.set("category", categoryFilter);
+      }
 
       const response = await fetch(`/api/transactions?${params.toString()}`, {
         headers: FAMILY_AUTH_HEADERS,

@@ -1,4 +1,5 @@
 import { jsonErrorResponse } from "@/lib/api-response";
+import { refreshAccountBalances } from "@/lib/account-balances";
 import { DEMO_USER_ID } from "@/lib/demo-user";
 import { prisma } from "@/lib/prisma";
 import { plaidClient } from "@/lib/plaid";
@@ -150,6 +151,11 @@ export async function POST(request: Request) {
           create: createPayload,
         });
       }
+
+      await refreshAccountBalances({
+        bankItemId: item.id,
+        accessToken: item.accessToken,
+      });
     }
 
     return NextResponse.json(summary);

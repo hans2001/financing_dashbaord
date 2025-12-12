@@ -3,7 +3,11 @@ import { useCallback, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import type { Account, Transaction } from "./types";
-import type { PageSizeOptionValue } from "./dashboard-utils";
+import type {
+  FlowFilterValue,
+  PageSizeOptionValue,
+  SortOptionValue,
+} from "./dashboard-utils";
 import { useSyncControls } from "./hooks/useSyncControls";
 import { useAccountsData } from "./hooks/useAccountsData";
 import {
@@ -26,8 +30,9 @@ type DashboardState = {
   selectedAccount: string;
   dateRange: { start: string; end: string };
   pageSize: PageSizeOptionValue;
-  sortOption: string;
-  flowFilter: string;
+  sortOption: SortOptionValue;
+  flowFilter: FlowFilterValue;
+  categoryFilter: string;
   currentPage: number;
   totalPages: number;
   showingStart: number;
@@ -41,6 +46,7 @@ type DashboardState = {
   categoryEmptyMessage: string;
   summaryRowsLabel: string;
   summaryErrorText: string | null;
+  categoryOptions: string[];
   activeSpentTotal: number;
   activeIncomeTotal: number;
   activeSpendCount: number;
@@ -64,8 +70,9 @@ type DashboardActions = {
   setSelectedAccount: (value: string) => void;
   setDateRange: Dispatch<SetStateAction<{ start: string; end: string }>>;
   setPageSize: (value: PageSizeOptionValue) => void;
-  setSortOption: (value: string) => void;
-  setFlowFilter: (value: string) => void;
+  setSortOption: (value: SortOptionValue) => void;
+  setFlowFilter: (value: FlowFilterValue) => void;
+  setCategoryFilter: (value: string) => void;
   handleSync: () => Promise<void>;
   setShowAccountsPanel: Dispatch<SetStateAction<boolean>>;
 };
@@ -85,6 +92,8 @@ export function useDashboardState(): DashboardState & DashboardActions {
     setSortOption: setSortOptionFilter,
     flowFilter,
     setFlowFilter: setFlowFilterFilter,
+    categoryFilter,
+    setCategoryFilter: setCategoryFilterFilter,
     currentPage,
     setCurrentPage,
     numericPageSize,
@@ -112,6 +121,7 @@ export function useDashboardState(): DashboardState & DashboardActions {
     currentPage,
     sortOption,
     flowFilter,
+    categoryFilter,
     refreshKey,
     hasDateRange,
   });
@@ -119,6 +129,7 @@ export function useDashboardState(): DashboardState & DashboardActions {
   const { summaryData, isLoadingSummary, summaryError } = useSummaryData({
     selectedAccount,
     dateRange,
+    categoryFilter,
     refreshKey,
     hasDateRange,
   });
@@ -165,7 +176,7 @@ export function useDashboardState(): DashboardState & DashboardActions {
   );
 
   const setSortOption = useCallback(
-    (value: string) => {
+    (value: SortOptionValue) => {
       onClearSelection();
       setSortOptionFilter(value);
     },
@@ -173,11 +184,18 @@ export function useDashboardState(): DashboardState & DashboardActions {
   );
 
   const setFlowFilter = useCallback(
-    (value: string) => {
+    (value: FlowFilterValue) => {
       onClearSelection();
       setFlowFilterFilter(value);
     },
     [onClearSelection, setFlowFilterFilter],
+  );
+  const setCategoryFilter = useCallback(
+    (value: string) => {
+      onClearSelection();
+      setCategoryFilterFilter(value);
+    },
+    [onClearSelection, setCategoryFilterFilter],
   );
 
   const handleDescriptionSaved = useCallback(
@@ -257,6 +275,28 @@ export function useDashboardState(): DashboardState & DashboardActions {
     : isLoadingSummary
       ? "Loading categories…"
       : "No spending data in this range yet.";
+  const allCategoryOptions = useMemo(() => {
+    if (!summaryData) {
+      return [];
+    }
+    const optionSet = new Set<string>();
+    const spendKeys = Object.keys(summaryData.categoryTotals ?? {});
+    const incomeKeys = Object.keys(summaryData.incomeCategoryTotals ?? {});
+    for (const key of [...spendKeys, ...incomeKeys]) {
+      if (key?.trim()) {
+        optionSet.add(key);
+      }
+    }
+    return Array.from(optionSet).sort((a, b) => a.localeCompare(b));
+  }, [summaryData]);
+
+  const categoryOptions = useMemo(() => {
+    const optionSet = new Set(allCategoryOptions);
+    if (categoryFilter !== "all" && categoryFilter.trim().length > 0) {
+      optionSet.add(categoryFilter);
+    }
+    return Array.from(optionSet).sort((a, b) => a.localeCompare(b));
+  }, [allCategoryOptions, categoryFilter]);
   const hasPreviousPage = !isShowingAllRows && currentPage > 0;
   const hasNextPage =
     !isShowingAllRows &&
@@ -295,6 +335,7 @@ export function useDashboardState(): DashboardState & DashboardActions {
     pageSize,
     sortOption,
     flowFilter,
+    categoryFilter,
     currentPage,
     totalPages,
     showingStart,
@@ -308,6 +349,7 @@ export function useDashboardState(): DashboardState & DashboardActions {
     categoryEmptyMessage,
     summaryRowsLabel,
     summaryErrorText,
+    categoryOptions,
     activeSpentTotal,
     activeIncomeTotal,
     activeSpendCount,
@@ -330,6 +372,7 @@ export function useDashboardState(): DashboardState & DashboardActions {
     setPageSize,
     setSortOption,
     setFlowFilter,
+    setCategoryFilter,
     handleSync,
     setShowAccountsPanel,
   };

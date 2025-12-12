@@ -6,6 +6,7 @@ import type { SummaryResponse } from "../types";
 type SummaryArgs = {
   selectedAccount: string;
   dateRange: { start: string; end: string };
+  categoryFilter: string;
   refreshKey: number;
   hasDateRange: boolean;
 };
@@ -13,6 +14,7 @@ type SummaryArgs = {
 export function useSummaryData({
   selectedAccount,
   dateRange,
+  categoryFilter,
   refreshKey,
   hasDateRange,
 }: SummaryArgs) {
@@ -22,6 +24,7 @@ export function useSummaryData({
       selectedAccount,
       dateRange.start,
       dateRange.end,
+      categoryFilter,
       refreshKey,
     ],
     enabled: hasDateRange,
@@ -32,6 +35,9 @@ export function useSummaryData({
       }
       params.set("startDate", dateRange.start);
       params.set("endDate", dateRange.end);
+      if (categoryFilter !== "all") {
+        params.set("category", categoryFilter);
+      }
 
       const response = await fetch(
         `/api/transactions/summary?${params.toString()}`,

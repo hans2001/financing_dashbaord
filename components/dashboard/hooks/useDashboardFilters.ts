@@ -7,7 +7,11 @@ import {
   PAGE_SIZE_OPTIONS,
   SORT_OPTIONS,
 } from "../dashboard-utils";
-import type { PageSizeOptionValue } from "../dashboard-utils";
+import type {
+  FlowFilterValue,
+  PageSizeOptionValue,
+  SortOptionValue,
+} from "../dashboard-utils";
 
 export type DashboardFilters = {
   selectedAccount: string;
@@ -16,10 +20,12 @@ export type DashboardFilters = {
   setDateRange: Dispatch<SetStateAction<{ start: string; end: string }>>;
   pageSize: PageSizeOptionValue;
   setPageSize: (value: PageSizeOptionValue) => void;
-  sortOption: string;
-  setSortOption: (value: string) => void;
-  flowFilter: string;
-  setFlowFilter: (value: string) => void;
+  sortOption: SortOptionValue;
+  setSortOption: (value: SortOptionValue) => void;
+  flowFilter: FlowFilterValue;
+  setFlowFilter: (value: FlowFilterValue) => void;
+  categoryFilter: string;
+  setCategoryFilter: (value: string) => void;
   currentPage: number;
   setCurrentPage: Dispatch<SetStateAction<number>>;
   numericPageSize: number;
@@ -43,13 +49,18 @@ export function useDashboardFilters(): DashboardFilters {
   )
     ? "all"
     : numericDefaultPageSize;
-  const defaultSort = SORT_OPTIONS[0]?.value ?? "date_desc";
-  const defaultFlowFilter = FLOW_FILTERS[0]?.value ?? "all";
+  const defaultSort = (SORT_OPTIONS[0]?.value ?? "date_desc") as SortOptionValue;
+  const defaultFlowFilter = (FLOW_FILTERS[0]?.value ?? "all") as FlowFilterValue;
+  const defaultCategoryFilter = "all";
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSizeState] =
     useState<PageSizeOptionValue>(defaultPageSizeOption);
-  const [sortOption, setSortOptionState] = useState<string>(defaultSort);
-  const [flowFilter, setFlowFilterState] = useState<string>(defaultFlowFilter);
+  const [sortOption, setSortOptionState] =
+    useState<SortOptionValue>(defaultSort);
+  const [flowFilter, setFlowFilterState] =
+    useState<FlowFilterValue>(defaultFlowFilter);
+  const [categoryFilter, setCategoryFilterState] =
+    useState<string>(defaultCategoryFilter);
   const resetPagination = useCallback(() => {
     setCurrentPage(0);
   }, []);
@@ -75,16 +86,23 @@ export function useDashboardFilters(): DashboardFilters {
     [resetPagination],
   );
   const setSortOption = useCallback(
-    (value: string) => {
+    (value: SortOptionValue) => {
       resetPagination();
       setSortOptionState(value);
     },
     [resetPagination],
   );
   const setFlowFilter = useCallback(
-    (value: string) => {
+    (value: FlowFilterValue) => {
       resetPagination();
       setFlowFilterState(value);
+    },
+    [resetPagination],
+  );
+  const setCategoryFilter = useCallback(
+    (value: string) => {
+      resetPagination();
+      setCategoryFilterState(value);
     },
     [resetPagination],
   );
@@ -105,6 +123,8 @@ export function useDashboardFilters(): DashboardFilters {
     setSortOption,
     flowFilter,
     setFlowFilter,
+    categoryFilter,
+    setCategoryFilter,
     currentPage,
     setCurrentPage,
     numericPageSize,

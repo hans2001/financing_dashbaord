@@ -119,7 +119,7 @@ function SummaryPanelComponent({
   categoryEmptyMessage,
 }: SummaryPanelProps) {
   return (
-    <div className="sticky top-6 flex max-h-[calc(100vh-200px)] min-w-0 flex-[0.15] flex-col gap-3 xl:min-w-[280px]">
+    <div className="flex min-w-0 flex-col gap-3">
       <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm shadow-slate-900/5">
         <div className="pb-2">
           <p className="text-[0.5rem] uppercase tracking-[0.3em] text-slate-400">

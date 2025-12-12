@@ -22,7 +22,6 @@
 - [ ] Pair `react-hook-form` with Zod schemas for filters and description editing so validation rules, defaults, and types stay in sync.
 - [ ] Expand component/API test coverage using React Testing Library plus supertest/next-test-api-route-handler to hit the “kill crucial mutants” goal.
 - [ ] Layer on lightweight budgeting goals (per-category and household) that highlight spend vs. target so overages stand out immediately.
-- [ ] Add a forward-looking cash-flow panel that projects month-end balance based on historical averages plus scheduled bills.
 - [ ] Introduce shared saved views/workspaces so Hans and Yuki can pin their own account selections and column presets, including a “family view” that aggregates every linked account plus user-specific filters.
 - [ ] Provide configurable alerts (email/push/webhooks) for suspicious spikes, large transfers, or low balances to help catch issues without babysitting the dashboard.
 

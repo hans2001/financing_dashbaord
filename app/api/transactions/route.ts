@@ -45,6 +45,7 @@ export async function GET(request: Request) {
     const offsetParam = Number(url.searchParams.get("offset") ?? 0);
     const sortParam = url.searchParams.get("sort") ?? "date_desc";
     const flowParam = url.searchParams.get("flow") ?? "all";
+    const categoryParam = url.searchParams.get("category");
 
     const limit =
       limitParam === null
@@ -101,6 +102,10 @@ export async function GET(request: Request) {
       where.amount = { gt: 0 };
     }
 
+    if (categoryParam && categoryParam !== "all") {
+      where.normalizedCategory = categoryParam;
+    }
+
     const orderBy = (() => {
       switch (sortParam) {
         case "date_asc":
@@ -138,8 +143,13 @@ export async function GET(request: Request) {
         where,
         include: {
           account: {
-            include: {
-              bankItem: true,
+            select: {
+              name: true,
+              bankItem: {
+                select: {
+                  institutionName: true,
+                },
+              },
             },
           },
         },

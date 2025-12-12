@@ -6,6 +6,11 @@ export type Account = {
   type: string;
   subtype?: string | null;
   institutionName?: string | null;
+  currentBalance?: number | null;
+  availableBalance?: number | null;
+  creditLimit?: number | null;
+  balanceLastUpdated?: string | null;
+  isBalanceStale?: boolean;
 };
 
 export type Transaction = {
@@ -39,4 +44,5 @@ export type SummaryResponse = {
   spendCount: number;
   incomeCount: number;
   categoryTotals: Record<string, number>;
+  incomeCategoryTotals: Record<string, number>;
 };

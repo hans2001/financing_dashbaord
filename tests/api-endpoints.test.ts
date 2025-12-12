@@ -1,11 +1,13 @@
 import { describe, expect, it, beforeEach, vi } from "vitest";
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 
 import {
   authorizeRequestMock,
   ensureDemoUserMock,
   plaidClientMock,
   prismaMock,
+  refreshAccountBalancesMock,
   resetMocks,
 } from "./test-utils/mocks";
 
@@ -38,6 +40,11 @@ vi.mock("@/lib/demo-user", () => ({
     ensureDemoUserMock(...args),
 }));
 
+vi.mock("@/lib/account-balances", () => ({
+  refreshAccountBalances: (...args: Parameters<typeof refreshAccountBalancesMock>) =>
+    refreshAccountBalancesMock(...args),
+}));
+
 beforeEach(() => {
   resetMocks();
   authorizeRequestMock.mockReturnValue({
@@ -59,6 +66,10 @@ describe("accounts endpoint", () => {
         bankItem: {
           institutionName: "Test Bank",
         },
+        currentBalance: new Prisma.Decimal("125.50"),
+        availableBalance: new Prisma.Decimal("120.75"),
+        creditLimit: new Prisma.Decimal("0"),
+        balanceLastUpdated: new Date("2025-03-01T10:15:00Z"),
       },
     ]);
 
@@ -77,6 +88,10 @@ describe("accounts endpoint", () => {
         type: "depository",
         subtype: "checking",
         institutionName: "Test Bank",
+        currentBalance: 125.5,
+        availableBalance: 120.75,
+        creditLimit: 0,
+        balanceLastUpdated: "2025-03-01T10:15:00.000Z",
       },
     ]);
   });
@@ -188,6 +203,24 @@ describe("transactions listing", () => {
     payload = await response.json();
     expect(payload.total).toBe(0);
   });
+
+  it("filters by normalized category when provided", async () => {
+    prismaMock.transaction.findMany.mockImplementationOnce(async (args) => {
+      expect(args?.where?.normalizedCategory).toBe("Food");
+      return [];
+    });
+    prismaMock.transaction.count.mockImplementationOnce(async (args) => {
+      expect(args?.where?.normalizedCategory).toBe("Food");
+      return 0;
+    });
+
+    const response = await transactionsGET(
+      new Request("http://localhost/api/transactions?category=Food"),
+    );
+    expect(response.status).toBe(200);
+    const payload = await response.json();
+    expect(payload.total).toBe(0);
+  });
 });
 
 describe("transactions summary", () => {
@@ -219,6 +252,9 @@ describe("transactions summary", () => {
     expect(payload.categoryTotals).toEqual({
       Groceries: 20,
       Uncategorized: 5,
+    });
+    expect(payload.incomeCategoryTotals).toEqual({
+      Income: 150,
     });
   });
 
@@ -257,6 +293,32 @@ describe("transactions summary", () => {
     expect(payload.categoryTotals).toEqual({
       Food: 30,
       Rent: 70,
+    });
+    expect(payload.incomeCategoryTotals).toEqual({
+      Business: 200,
+    });
+  });
+
+  it("applies category filter when provided", async () => {
+    prismaMock.transaction.findMany.mockImplementationOnce(async (args) => {
+      expect(args?.where?.normalizedCategory).toBe("Rent");
+      return [];
+    });
+
+    const response = await transactionsSummaryGET(
+      new Request("http://localhost/api/transactions/summary?category=Rent"),
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      totalSpent: 0,
+      totalIncome: 0,
+      largestExpense: 0,
+      largestIncome: 0,
+      spendCount: 0,
+      incomeCount: 0,
+      categoryTotals: {},
+      incomeCategoryTotals: {},
     });
   });
 });
@@ -318,8 +380,12 @@ describe("transactions sync", () => {
     expect(plaidClientMock.transactionsGet).toHaveBeenCalledWith({
       access_token: "access-1",
       end_date: expect.any(String),
-      start_date: expect.any(String),
-      options: { count: 500 },
+        start_date: expect.any(String),
+        options: { count: 500 },
+      });
+    expect(refreshAccountBalancesMock).toHaveBeenCalledWith({
+      bankItemId: "bank-1",
+      accessToken: "access-1",
     });
   });
 
@@ -435,6 +501,10 @@ describe("plaid endpoints", () => {
     expect(await response.json()).toEqual({ status: "ok" });
     expect(prismaMock.bankItem.upsert).toHaveBeenCalled();
     expect(prismaMock.account.upsert).toHaveBeenCalled();
+    expect(refreshAccountBalancesMock).toHaveBeenCalledWith({
+      bankItemId: "bank-1",
+      accessToken: "access-123",
+    });
   });
 
   it("acknowledges webhook payloads", async () => {

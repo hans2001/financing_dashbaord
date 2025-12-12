@@ -19,6 +19,7 @@ type SummaryResponse = {
   spendCount: number;
   incomeCount: number;
   categoryTotals: Record<string, number>;
+  incomeCategoryTotals: Record<string, number>;
 };
 
 export async function GET(request: Request) {
@@ -32,6 +33,7 @@ export async function GET(request: Request) {
     const accountId = url.searchParams.get("accountId");
     const startDate = url.searchParams.get("startDate");
     const endDate = url.searchParams.get("endDate");
+    const categoryParam = url.searchParams.get("category");
     const where: TransactionWhereInput = {
       account: {
         bankItem: {
@@ -68,6 +70,10 @@ export async function GET(request: Request) {
       }
     }
 
+    if (categoryParam && categoryParam !== "all") {
+      where.normalizedCategory = categoryParam;
+    }
+
     let offset = 0;
     let totalSpent = 0;
     let totalIncome = 0;
@@ -76,6 +82,7 @@ export async function GET(request: Request) {
     let spendCount = 0;
     let incomeCount = 0;
     const categoryTotals: Record<string, number> = {};
+    const incomeCategoryTotals: Record<string, number> = {};
 
     while (true) {
       const batch = await prisma.transaction.findMany({
@@ -121,6 +128,15 @@ export async function GET(request: Request) {
           totalIncome += amount;
           largestIncome = Math.max(largestIncome, amount);
           incomeCount += 1;
+          const label =
+            transaction.normalizedCategory ??
+            getTransactionCategoryPath({
+              category: transaction.category,
+              name: transaction.name,
+              merchantName: transaction.merchantName,
+            });
+          incomeCategoryTotals[label] =
+            (incomeCategoryTotals[label] ?? 0) + amount;
         }
       }
 
@@ -137,6 +153,7 @@ export async function GET(request: Request) {
       spendCount,
       incomeCount,
       categoryTotals,
+      incomeCategoryTotals,
     };
 
     return NextResponse.json(response);

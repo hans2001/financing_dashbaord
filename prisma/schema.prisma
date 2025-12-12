@@ -41,6 +41,10 @@ model Account {
   type            String
   subtype         String?
   currency        String?
+  currentBalance   Decimal?
+  availableBalance Decimal?
+  creditLimit      Decimal?
+  balanceLastUpdated DateTime?
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 

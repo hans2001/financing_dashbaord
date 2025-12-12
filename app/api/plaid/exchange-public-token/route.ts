@@ -1,4 +1,5 @@
 import { jsonErrorResponse } from "@/lib/api-response";
+import { refreshAccountBalances } from "@/lib/account-balances";
 import { DEMO_USER_ID, ensureDemoUser } from "@/lib/demo-user";
 import { prisma } from "@/lib/prisma";
 import { plaidClient } from "@/lib/plaid";
@@ -83,6 +84,11 @@ export async function POST(request: Request) {
         }),
       ),
     );
+
+    await refreshAccountBalances({
+      bankItemId: bankItem.id,
+      accessToken: access_token,
+    });
 
     return NextResponse.json({ status: "ok" });
   } catch (error) {
