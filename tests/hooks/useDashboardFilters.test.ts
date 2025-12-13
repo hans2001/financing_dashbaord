@@ -13,11 +13,11 @@ describe("useDashboardFilters", () => {
     expect(result.current.currentPage).toBe(3);
 
     act(() => {
-      result.current.setSelectedAccount("checking-account");
+      result.current.setSelectedAccounts(["checking-account"]);
     });
 
     expect(result.current.currentPage).toBe(0);
-    expect(result.current.selectedAccount).toBe("checking-account");
+    expect(result.current.selectedAccounts).toEqual(["checking-account"]);
   });
 
   it("resets pagination when the date range updates", () => {

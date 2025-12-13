@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { DEMO_USER_ID } from "@/lib/demo-user";
 
 const FAMILY_AUTH_HEADER = "x-family-secret";
 const FAMILY_COOKIE_NAME = "__Secure-family-secret";
@@ -96,9 +97,23 @@ function extractSecretFromRequest(request: Request) {
   return { secret: "", source: "none" as const };
 }
 
+function extractUserIdFromRequest(request: Request) {
+  const headerValue = request.headers.get("x-family-user-id");
+  if (headerValue?.trim()) {
+    return headerValue.trim();
+  }
+  const url = new URL(request.url);
+  const queryUserId = url.searchParams.get("userId");
+  if (queryUserId?.trim()) {
+    return queryUserId.trim();
+  }
+  return DEMO_USER_ID;
+}
+
 type AuthorizationSuccess = {
   ok: true;
   token: string;
+  userId: string;
 };
 
 type AuthorizationFailure = {
@@ -133,7 +148,8 @@ export function authorizeRequest(request: Request): AuthorizationResult {
     };
   }
 
-  return { ok: true, token: providedSecret };
+  const userId = extractUserIdFromRequest(request);
+  return { ok: true, token: providedSecret, userId };
 }
 
 export function getFamilyHeaderValue() {

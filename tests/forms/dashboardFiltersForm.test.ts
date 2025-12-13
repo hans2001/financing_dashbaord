@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 import { dashboardFiltersResolver } from "@/components/dashboard/forms/dashboardFiltersForm";
 
 const baseValues = {
-  accountId: "all",
   start: "2024-01-01",
   end: "2024-01-31",
   pageSize: "25",

@@ -14,7 +14,7 @@ export type TransactionsQueryResult = {
 };
 
 type TransactionsArgs = {
-  selectedAccount: string;
+  selectedAccounts: string[];
   dateRange: { start: string; end: string };
   pageSize: number | "all";
   currentPage: number;
@@ -31,7 +31,7 @@ const EMPTY_RESULT: TransactionsQueryResult = {
 };
 
 export function useTransactionsData({
-  selectedAccount,
+  selectedAccounts,
   dateRange,
   pageSize,
   currentPage,
@@ -41,11 +41,22 @@ export function useTransactionsData({
   refreshKey,
   hasDateRange,
 }: TransactionsArgs) {
+  const normalizedAccountIds = useMemo(() => {
+    const filteredIds = selectedAccounts.filter(Boolean);
+    if (filteredIds.includes("all")) {
+      return [];
+    }
+    return Array.from(new Set(filteredIds));
+  }, [selectedAccounts]);
+
+  const accountFilterKey =
+    normalizedAccountIds.length > 0 ? normalizedAccountIds.join(",") : "all";
+
   const queryKey = useMemo(
     () =>
       [
         "transactions",
-        selectedAccount,
+        accountFilterKey,
         dateRange.start,
         dateRange.end,
         pageSize,
@@ -56,7 +67,7 @@ export function useTransactionsData({
         refreshKey,
       ] as const,
     [
-      selectedAccount,
+      accountFilterKey,
       dateRange.start,
       dateRange.end,
       pageSize,
@@ -80,8 +91,8 @@ export function useTransactionsData({
         params.set("limit", pageSize.toString());
         params.set("offset", (currentPage * pageSize).toString());
       }
-      if (selectedAccount !== "all") {
-        params.set("accountId", selectedAccount);
+      for (const accountId of normalizedAccountIds) {
+        params.append("accountId", accountId);
       }
       params.set("startDate", dateRange.start);
       params.set("endDate", dateRange.end);

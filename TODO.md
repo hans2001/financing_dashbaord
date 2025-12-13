@@ -1,29 +1,44 @@
 # Future iterations
 
+## Dashboard experience
+
 - [x] Implement a sort-by dropdown that lets users reorder transactions by date, amount, or merchant name while respecting the current filters.
 - [x] Add authentication that ensures only family members can access the dashboard.
 - [ ] Pre-register Yuki and Hans accounts with proper roles so they can sign in without extra onboarding.
-- [x] filter to show spending only or inflow only for transaction table.
-- [ ] Allow manual CRUD of supplemental transactions (e.g., attache to new accounts(can self open)) so the dashboard can track (famiy assets oversees).
+- [x] Filter to show spending only or inflow only for the transaction table.
+- [ ] Allow manual CRUD of supplemental transactions (e.g., attach to new accounts so the dashboard can track family assets overseas).
 - [ ] Add a monthly trend line chart (date → spent) so momentum can be tracked without exporting data.
 - [x] Show a pie chart of spending by category to highlight where money is going at a glance.
-- [x] Include a description column on each transaction row to surface notes or context directly in the table. (default null) (optional field)
+- [x] Include a description column on each transaction row to surface notes or context directly in the table.
 - [ ] Treat pending credit-card charges as temporary (excluding them from summaries until they post) or automatically net them with the checking account debit so the dashboard mirrors real-world cash flow.
-- [ ] address all security concerns( cannot let random people to be able to view our dashboard ) (auth system in place)
+- [ ] Address all security concerns so unauthorized people cannot view the dashboard.
 - [x] Protect `api/*` routes with at least a lightweight token/session so Plaid secrets aren’t freely callable in production.
 - [x] Add input validation/ownership checks for the transaction APIs before expanding beyond the demo user to prevent accidental data leaks.
 - [x] Introduce request throttling or caching on `/api/transactions` if the dashboard ends up exposed to larger traffic to avoid overloading Postgres.
 - [x] Improve page navigation UX and make the filter text lower-contrast / smaller so the controls stay subtle.
-- [ ] Build targeted UI/component tests for `FiltersPanel`, `TransactionsTable`, and `SummaryPanel` (React Testing Library + mocked fetch/React Query) so the new modules gorilla-check category sorting/pagination.
+- [x] Add a category filter to the transactions table controls so users can narrow rows to any normalized category.
+- [ ] AI assisted transaction categorizing
+- [ ] AI assistated financing structures suggestion and refinement
+- [ ] RAG pipeline to local database that feed AI knowledge
+- [ ] multi select category, and category snpshot on date range data, not on visualized data
+
+## Architecture & modules
+
+- [ ] Break `app/dashboard/page.tsx` into smaller modules (filters, transactions table, summary/pricing panels) so each file stays under ~300 lines and the parent page simply composes the child components.
+- [ ] Extract helper hooks for filters, summary data, and selection state into dedicated files so each child component relies on focused hooks instead of inline logic.
+- [ ] Audit shared UI primitives and hooks to determine what we can reuse; adopt `shadcn/ui` (or another consistent primitive set) for cards, buttons, and typography when new components land.
+- [ ] Build targeted UI/component tests for `FiltersPanel`, `TransactionsTable`, and `SummaryPanel` (React Testing Library + mocked fetch/React Query) to exercise sorting, pagination, and filtering and to “kill crucial mutants.”
 - [ ] Split `useDashboardState` into smaller, focused hooks (e.g., `useTransactionsFilters`, `useSelectionState`, `useSummaryData`) so each concern can be tested and memoized independently.
-- [ ] Add a category filter to the transactions table controls (new dropdown/tag selector) so users can narrow rows to any normalized category; this can sit alongside the existing Flow filter rather than reusing it so preferences stay explicit.
-- [ ] Adopt shadcn/ui (or similar) for shared primitives so buttons, cards, and typography stay consistent across the dashboard without bespoke Tailwind per component.
-- [ ] Introduce a data-fetching helper such as React Query/SWR for accounts, transactions, and summary calls to standardize caching, retries, and background refresh.
-- [ ] Pair `react-hook-form` with Zod schemas for filters and description editing so validation rules, defaults, and types stay in sync.
-- [ ] Expand component/API test coverage using React Testing Library plus supertest/next-test-api-route-handler to hit the “kill crucial mutants” goal.
+- [x] Introduce a data-fetching helper such as React Query or SWR for accounts, transactions, and summary calls to standardize caching, retries, and background refresh.
+- [x] Pair `react-hook-form` with Zod schemas for filters and description editing so validation rules, defaults, and types stay in sync.
+- [ ] Expand component/API test coverage using React Testing Library plus supertest/next-test-api-route-handler to cover the new modules and locked-down APIs.
+
+## Platform & automation
+
 - [ ] Layer on lightweight budgeting goals (per-category and household) that highlight spend vs. target so overages stand out immediately.
 - [ ] Introduce shared saved views/workspaces so Hans and Yuki can pin their own account selections and column presets, including a “family view” that aggregates every linked account plus user-specific filters.
 - [ ] Provide configurable alerts (email/push/webhooks) for suspicious spikes, large transfers, or low balances to help catch issues without babysitting the dashboard.
+- [ ] Deploy the database and dashboard website with automated pipelines so the production stack mirrors local QA/CI environments.
 
 ## Performance plan
 

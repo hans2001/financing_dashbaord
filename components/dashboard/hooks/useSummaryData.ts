@@ -1,10 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 
 import { FAMILY_AUTH_HEADERS } from "../dashboard-utils";
 import type { SummaryResponse } from "../types";
 
 type SummaryArgs = {
-  selectedAccount: string;
+  selectedAccounts: string[];
   dateRange: { start: string; end: string };
   categoryFilter: string;
   refreshKey: number;
@@ -12,16 +13,27 @@ type SummaryArgs = {
 };
 
 export function useSummaryData({
-  selectedAccount,
+  selectedAccounts,
   dateRange,
   categoryFilter,
   refreshKey,
   hasDateRange,
 }: SummaryArgs) {
+  const normalizedAccountIds = useMemo(() => {
+    const filteredIds = selectedAccounts.filter(Boolean);
+    if (filteredIds.includes("all")) {
+      return [];
+    }
+    return Array.from(new Set(filteredIds));
+  }, [selectedAccounts]);
+
+  const accountFilterKey =
+    normalizedAccountIds.length > 0 ? normalizedAccountIds.join(",") : "all";
+
   const summaryQuery = useQuery<SummaryResponse>({
     queryKey: [
       "transactions-summary",
-      selectedAccount,
+      accountFilterKey,
       dateRange.start,
       dateRange.end,
       categoryFilter,
@@ -30,8 +42,8 @@ export function useSummaryData({
     enabled: hasDateRange,
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (selectedAccount !== "all") {
-        params.set("accountId", selectedAccount);
+      for (const accountId of normalizedAccountIds) {
+        params.append("accountId", accountId);
       }
       params.set("startDate", dateRange.start);
       params.set("endDate", dateRange.end);

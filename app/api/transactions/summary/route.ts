@@ -30,7 +30,9 @@ export async function GET(request: Request) {
     }
 
     const url = new URL(request.url);
-    const accountId = url.searchParams.get("accountId");
+    const accountIds = url
+      .searchParams.getAll("accountId")
+      .filter(Boolean);
     const startDate = url.searchParams.get("startDate");
     const endDate = url.searchParams.get("endDate");
     const categoryParam = url.searchParams.get("category");
@@ -42,22 +44,31 @@ export async function GET(request: Request) {
       },
     };
 
-    if (accountId && accountId !== "all") {
-      const validatedAccount = await prisma.account.findFirst({
+    const filteredAccountIds = accountIds.filter((id) => id !== "all");
+    if (filteredAccountIds.length > 0) {
+      const uniqueAccountIds = Array.from(new Set(filteredAccountIds));
+      const validatedAccounts = await prisma.account.findMany({
         where: {
-          id: accountId,
+          id: {
+            in: uniqueAccountIds,
+          },
           bankItem: {
             userId: DEMO_USER_ID,
           },
         },
+        select: {
+          id: true,
+        },
       });
-      if (!validatedAccount) {
+      if (validatedAccounts.length !== uniqueAccountIds.length) {
         return NextResponse.json(
           { error: "Account filter not found" },
           { status: 400 },
         );
       }
-      where.accountId = accountId;
+      where.accountId = {
+        in: uniqueAccountIds,
+      };
     }
 
     if (startDate || endDate) {

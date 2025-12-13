@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+// Set DATABASE_URL before any imports that might load prisma
+// This prevents errors when demo-user.ts imports prisma.ts
+process.env.DATABASE_URL = process.env.DATABASE_URL || "postgresql://localhost:5432/test";
+
 const setEnvValues = (values: Record<string, string | undefined>) => {
   for (const [key, value] of Object.entries(values)) {
     if (value === undefined) {
@@ -88,6 +92,7 @@ describe("family authorization utilities", () => {
   });
 
   it("allows requests that present the family secret header", async () => {
+    const { DEMO_USER_ID } = await import("@/lib/demo-user");
     const familyAuth = await loadFamilyAuthModule();
     const secret = familyAuth.getFamilyHeaderValue();
     const request = new Request("https://example.com", {
@@ -100,6 +105,43 @@ describe("family authorization utilities", () => {
       throw new Error("Expected authorization to succeed");
     }
     expect(result.token).toBe(secret);
+    expect(result.userId).toBe(DEMO_USER_ID);
+  });
+
+  it("lets requesters set their user id via header", async () => {
+    const familyAuth = await loadFamilyAuthModule();
+    const secret = familyAuth.getFamilyHeaderValue();
+    const request = new Request("https://example.com", {
+      headers: {
+        "x-family-secret": secret,
+        "x-family-user-id": "hans",
+      },
+    });
+
+    const result = familyAuth.authorizeRequest(request);
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      throw new Error("Expected authorization to succeed");
+    }
+    expect(result.userId).toBe("hans");
+  });
+
+  it("falls back to query userId when header is absent", async () => {
+    const familyAuth = await loadFamilyAuthModule();
+    const secret = familyAuth.getFamilyHeaderValue();
+    const request = new Request(
+      "https://example.com?userId=yuki",
+      {
+        headers: { "x-family-secret": secret },
+      },
+    );
+
+    const result = familyAuth.authorizeRequest(request);
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      throw new Error("Expected authorization to succeed");
+    }
+    expect(result.userId).toBe("yuki");
   });
 
   it("denies requests without the header", async () => {

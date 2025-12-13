@@ -1,9 +1,15 @@
 export const FAMILY_AUTH_HEADER = "x-family-secret";
+export const FAMILY_USER_HEADER = "x-family-user-id";
 export const FAMILY_AUTH_SECRET =
   process.env.NEXT_PUBLIC_FAMILY_AUTH_TOKEN ?? "family-dashboard-secret";
 export const FAMILY_AUTH_HEADERS = {
   [FAMILY_AUTH_HEADER]: FAMILY_AUTH_SECRET,
 };
+
+export const getFamilyAuthHeaders = (userId?: string) => ({
+  [FAMILY_AUTH_HEADER]: FAMILY_AUTH_SECRET,
+  ...(userId ? { [FAMILY_USER_HEADER]: userId } : {}),
+});
 
 export const BALANCE_STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000;
 

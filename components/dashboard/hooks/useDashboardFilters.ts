@@ -14,8 +14,8 @@ import type {
 } from "../dashboard-utils";
 
 export type DashboardFilters = {
-  selectedAccount: string;
-  setSelectedAccount: (value: string) => void;
+  selectedAccounts: string[];
+  setSelectedAccounts: (value: string[]) => void;
   dateRange: { start: string; end: string };
   setDateRange: Dispatch<SetStateAction<{ start: string; end: string }>>;
   pageSize: PageSizeOptionValue;
@@ -34,7 +34,9 @@ export type DashboardFilters = {
 };
 
 export function useDashboardFilters(): DashboardFilters {
-  const [selectedAccount, setSelectedAccountState] = useState("all");
+  const [selectedAccounts, setSelectedAccountsState] = useState<string[]>([
+    "all",
+  ]);
   const [dateRange, setDateRangeState] = useState(() =>
     computeDefaultDateRange(),
   );
@@ -64,10 +66,10 @@ export function useDashboardFilters(): DashboardFilters {
   const resetPagination = useCallback(() => {
     setCurrentPage(0);
   }, []);
-  const setSelectedAccount = useCallback(
-    (value: string) => {
+  const setSelectedAccounts = useCallback(
+    (value: string[]) => {
       resetPagination();
-      setSelectedAccountState(value);
+      setSelectedAccountsState(value);
     },
     [resetPagination],
   );
@@ -113,8 +115,8 @@ export function useDashboardFilters(): DashboardFilters {
   );
 
   return {
-    selectedAccount,
-    setSelectedAccount,
+    selectedAccounts,
+    setSelectedAccounts,
     dateRange,
     setDateRange,
     pageSize,

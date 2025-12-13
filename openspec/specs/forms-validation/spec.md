@@ -3,7 +3,7 @@
 `FiltersPanel` SHALL run every filter control through one `react-hook-form` instance powered by a Zod schema so defaults, validation, and UI feedback stay in sync without duplicating logic.
 
 #### Scenario: Defaults stay aligned with `useDashboardFilters`
-- **GIVEN** `useDashboardFilters` exposes `selectedAccount`, `dateRange`, `pageSize`, `flowFilter`, `categoryFilter`, and `sortOption`,
+- **GIVEN** `useDashboardFilters` exposes `selectedAccounts`, `dateRange`, `pageSize`, `flowFilter`, `categoryFilter`, and `sortOption`,
 - **WHEN** `FiltersPanel` mounts,
 - **THEN** the RHF default values MUST mirror those setters, so the schema can validate them with the shared values (e.g., the first flow option, the computed default date range, etc.) and the UI never drifts from the persisted state.
 

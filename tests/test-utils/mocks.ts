@@ -4,7 +4,22 @@ import { vi } from "vitest";
 type StandardFunction = (...args: unknown[]) => unknown;
 type AnyMock = ReturnType<typeof vi.fn<StandardFunction>>;
 type PrismaCollection = Record<string, AnyMock>;
-type PlaidClientCollection = Record<string, AnyMock>;
+type PrismaMock = {
+  account: PrismaCollection;
+  transaction: PrismaCollection;
+  bankItem: PrismaCollection;
+  user: PrismaCollection;
+  savedView: PrismaCollection;
+};
+type PlaidClientMock = {
+  transactionsGet: AnyMock;
+  linkTokenCreate: AnyMock;
+  itemPublicTokenExchange: AnyMock;
+  itemGet: AnyMock;
+  institutionsGetById: AnyMock;
+  accountsGet: AnyMock;
+  accountsBalanceGet: AnyMock;
+};
 
 const createMockFn = () => vi.fn<StandardFunction>();
 
@@ -12,7 +27,7 @@ export const authorizeRequestMock = vi.fn<(request: Request) => AuthorizationRes
 export const ensureDemoUserMock = vi.fn<() => Promise<{ id: string }>>();
 export const refreshAccountBalancesMock = createMockFn();
 
-export const prismaMock: Record<string, PrismaCollection> = {
+export const prismaMock: PrismaMock = {
   account: {
     findMany: createMockFn(),
     findFirst: createMockFn(),
@@ -32,10 +47,20 @@ export const prismaMock: Record<string, PrismaCollection> = {
   },
   user: {
     upsert: createMockFn(),
+    findMany: createMockFn(),
+    update: createMockFn(),
+    updateMany: createMockFn(),
+  },
+  savedView: {
+    findUnique: createMockFn(),
+    findMany: createMockFn(),
+    create: createMockFn(),
+    update: createMockFn(),
+    delete: createMockFn(),
   },
 };
 
-export const plaidClientMock: PlaidClientCollection = {
+export const plaidClientMock: PlaidClientMock = {
   transactionsGet: createMockFn(),
   linkTokenCreate: createMockFn(),
   itemPublicTokenExchange: createMockFn(),

@@ -82,7 +82,6 @@ export function LinkedAccountsPanel({
               typeof account.availableBalance === "number" &&
               typeof account.currentBalance === "number" &&
               account.availableBalance !== account.currentBalance;
-
             return (
               <div
                 key={account.id}

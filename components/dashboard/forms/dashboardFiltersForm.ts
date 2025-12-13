@@ -27,7 +27,6 @@ const PAGE_SIZE_STRING_VALUES = [
 
 const dashboardFiltersSchema = z
   .object({
-    accountId: z.string().min(1, { message: "Account is required" }),
     start: z
       .string()
       .regex(ISO_DATE_REGEX, { message: "Start date must be YYYY-MM-DD" }),

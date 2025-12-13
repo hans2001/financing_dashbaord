@@ -14,7 +14,7 @@
 Dashboard state SHALL be composed from hooks in `components/dashboard/hooks` so each concern stays testable and filter changes reset selections/pagination consistently.
 
 #### Scenario: Filters and pagination reset selection
-- **WHEN** `useDashboardFilters` setters (`setSelectedAccount`, `setDateRange`, `setPageSize`, `setSortOption`, `setFlowFilter`) run through the wrappers returned by `useDashboardState`,
+- **WHEN** `useDashboardFilters` setters (`setSelectedAccounts`, `setDateRange`, `setPageSize`, `setSortOption`, `setFlowFilter`) run through the wrappers returned by `useDashboardState`,
 - **THEN** they MUST clear the current selection, reset pagination to page 0, and recompute numeric page size/`isShowingAllRows` so downstream queries stay in sync.
 
 #### Scenario: React Query hooks gate fetches on date range + refresh key

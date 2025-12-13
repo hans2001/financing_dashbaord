@@ -21,7 +21,7 @@ const COOKIE_OPTIONS = {
   maxAge: 60 * 60 * 8, // 8 hours
 };
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const response = NextResponse.next();
   const existing = request.cookies.get(FAMILY_COOKIE_NAME)?.value;
 
@@ -35,3 +35,4 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: ["/dashboard", "/dashboard/:path*"],
 };
+
