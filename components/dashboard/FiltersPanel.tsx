@@ -1,19 +1,20 @@
-import { memo, useEffect, useId, useMemo } from "react";
-import { Controller, useForm } from "react-hook-form";
+'use client'
 
+import { memo, useEffect, useId, useMemo } from "react";
+import { useForm } from "react-hook-form";
+import * as Collapsible from "@radix-ui/react-collapsible";
+
+import { FilterChips } from "./filters/FilterChips";
+import { FilterSummary } from "./filters/FilterSummary";
+import { FilterTray } from "./filters/FilterTray";
 import {
-  FLOW_FILTERS,
-  PAGE_SIZE_OPTIONS,
-  SORT_OPTIONS,
+  DEFAULT_PAGE_SIZE_OPTION,
+  DEFAULT_SORT_OPTION,
 } from "./dashboard-utils";
-import type {
-  FlowFilterValue,
-  PageSizeOptionValue,
-  SortOptionValue,
-} from "./dashboard-utils";
+import type { PageSizeOptionValue, SortOptionValue } from "./dashboard-utils";
 import {
-  DashboardFiltersFormValues,
   dashboardFiltersResolver,
+  DashboardFiltersFormValues,
   isIsoDateString,
 } from "./forms/dashboardFiltersForm";
 
@@ -22,8 +23,6 @@ type FiltersPanelProps = {
   onDateRangeChange: (next: { start: string; end: string }) => void;
   pageSize: PageSizeOptionValue;
   onPageSizeChange: (value: PageSizeOptionValue) => void;
-  flowFilter: FlowFilterValue;
-  onFlowFilterChange: (value: FlowFilterValue) => void;
   categoryFilter: string;
   onCategoryFilterChange: (value: string) => void;
   categoryOptions: string[];
@@ -31,26 +30,15 @@ type FiltersPanelProps = {
   onSortOptionChange: (value: SortOptionValue) => void;
   isCollapsed: boolean;
   onToggleCollapsed: () => void;
+  isSyncing: boolean;
+  onSync: () => void;
 };
-
-const FILTERS_ROW_CLASSES =
-  "flex flex-nowrap gap-2 overflow-x-auto pb-1 scrollbar-thin";
-const FIELD_WRAPPER_CLASSES =
-  "flex min-w-[7rem] flex-1 flex-shrink-0 flex-col gap-1 text-[0.55rem]";
-const FIELD_LABEL_CLASSES =
-  "text-[0.55rem] font-semibold uppercase tracking-[0.3em] text-slate-500";
-const FIELD_CONTROL_CLASSES =
-  "h-7 w-full rounded-sm border border-slate-200 bg-white px-1.5 text-[0.65rem] text-slate-700 outline-none focus:border-slate-400 transition";
-const PRIMARY_FIELD_COL_SPAN = "min-w-[130px]";
-const DATE_FIELD_COL_SPAN = "min-w-[150px]";
 
 function FiltersPanelComponent({
   dateRange,
   onDateRangeChange,
   pageSize,
   onPageSizeChange,
-  flowFilter,
-  onFlowFilterChange,
   categoryFilter,
   onCategoryFilterChange,
   categoryOptions,
@@ -58,6 +46,8 @@ function FiltersPanelComponent({
   onSortOptionChange,
   isCollapsed,
   onToggleCollapsed,
+  isSyncing,
+  onSync,
 }: FiltersPanelProps) {
   const {
     control,
@@ -69,7 +59,6 @@ function FiltersPanelComponent({
       start: dateRange.start,
       end: dateRange.end,
       pageSize: normalizePageSize(pageSize),
-      flowFilter,
       categoryFilter,
       sortOption,
     },
@@ -82,7 +71,6 @@ function FiltersPanelComponent({
       start: dateRange.start,
       end: dateRange.end,
       pageSize: normalizePageSize(pageSize),
-      flowFilter,
       categoryFilter,
       sortOption,
     });
@@ -91,20 +79,12 @@ function FiltersPanelComponent({
     dateRange.start,
     dateRange.end,
     pageSize,
-    flowFilter,
     categoryFilter,
     sortOption,
   ]);
 
   const dateError = errors.start?.message ?? errors.end?.message;
-
-  const filtersId = useId();
-  const filtersSectionClassName = [
-    "flex flex-col gap-2",
-    isCollapsed ? "hidden" : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
+  const detailTrayId = useId();
 
   const normalizedCategoryOptions = useMemo(() => {
     if (
@@ -139,19 +119,22 @@ function FiltersPanelComponent({
     onDateRangeChange(nextRange);
   };
 
-  const handlePageSizeChange = (nextValue: string) => {
+  const handlePageSizeChange = (
+    nextValue: PageSizeOptionValue | string,
+  ) => {
     const normalized =
-      nextValue === "all" ? "all" : Number(nextValue);
+      nextValue === "all"
+        ? "all"
+        : typeof nextValue === "number"
+        ? nextValue
+        : Number(nextValue);
+    if (typeof normalized === "number" && Number.isNaN(normalized)) {
+      return;
+    }
     if (normalized === pageSize) {
       return;
     }
     onPageSizeChange(normalized as PageSizeOptionValue);
-  };
-
-  const handleFlowChange = (nextValue: FlowFilterValue) => {
-    if (nextValue !== flowFilter) {
-      onFlowFilterChange(nextValue);
-    }
   };
 
   const handleCategoryChange = (nextValue: string) => {
@@ -166,181 +149,87 @@ function FiltersPanelComponent({
     }
   };
 
+  const hasCategoryFilter =
+    Boolean(categoryFilter && categoryFilter !== "all");
+  const hasSortFilter = sortOption !== DEFAULT_SORT_OPTION;
+  const hasPageSizeFilter = pageSize !== DEFAULT_PAGE_SIZE_OPTION;
+  const hasActiveFilters =
+    hasCategoryFilter || hasSortFilter || hasPageSizeFilter;
+
+  const handleClearFilters = () => {
+    handleCategoryChange("all");
+    handleSortChange(DEFAULT_SORT_OPTION);
+    handlePageSizeChange(DEFAULT_PAGE_SIZE_OPTION);
+  };
+
+  const summaryCardClasses =
+    "rounded-xl border border-slate-200 bg-white px-3 py-0 shadow-sm shadow-slate-900/5";
+  const detailContentClasses = [
+    "overflow-hidden transition-[max-height,opacity] duration-150 ease-in-out",
+    isCollapsed
+      ? "max-h-0 opacity-0 pointer-events-none"
+      : "max-h-[32rem] opacity-100 pointer-events-auto",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
-    <form noValidate className="flex flex-col gap-2 text-[0.65rem]">
-      <div className="flex w-full items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold text-slate-900">Transactions</h2>
-        <button
-          type="button"
-          className="text-[0.55rem] font-semibold uppercase tracking-[0.35em] text-slate-500 transition hover:text-slate-800"
-          onClick={onToggleCollapsed}
-          aria-controls={filtersId}
-          aria-expanded={!isCollapsed}
-        >
-          {isCollapsed ? "Show filters" : "Hide filters"}
-        </button>
-      </div>
-      <div
-        id={filtersId}
-        aria-hidden={isCollapsed}
-        className={filtersSectionClassName}
-      >
-        <div className={FILTERS_ROW_CLASSES}>
-          <label
-            className={`${FIELD_WRAPPER_CLASSES} ${DATE_FIELD_COL_SPAN}`}
-          >
-            <span className={FIELD_LABEL_CLASSES}>From</span>
-            <Controller
-              control={control}
-              name="start"
-              render={({ field }) => (
-                <input
-                  {...field}
-                  type="date"
-                  value={field.value ?? dateRange.start}
-                  onChange={(event) => {
-                    field.onChange(event);
-                    handleDateChange("start", event.target.value);
-                  }}
-                  className={FIELD_CONTROL_CLASSES}
-                />
-              )}
+    <section className="flex flex-col gap-2">
+      <div className={`${summaryCardClasses} flex flex-col gap-0`}>
+        <FilterSummary
+          dateRange={dateRange}
+          isCollapsed={isCollapsed}
+          onToggleCollapsed={onToggleCollapsed}
+          detailTrayId={detailTrayId}
+          hasActiveFilters={hasActiveFilters}
+          onClearFilters={handleClearFilters}
+        />
+        <div className="flex items-center justify-between gap-3 border-t border-slate-100 px-0 py-2">
+          <div className="flex-1">
+            <FilterChips
+              categoryFilter={categoryFilter}
+              handleCategoryChange={handleCategoryChange}
+              sortOption={sortOption}
+              handleSortChange={handleSortChange}
+              pageSize={pageSize}
+              handlePageSizeChange={handlePageSizeChange}
+              defaultCategories={categoryOptions}
             />
-          </label>
-          <label
-            className={`${FIELD_WRAPPER_CLASSES} ${DATE_FIELD_COL_SPAN}`}
+          </div>
+          <button
+            type="button"
+            className="rounded-full border border-slate-200 px-3 text-[0.55rem] font-semibold uppercase tracking-[0.3em] text-slate-700 transition hover:border-slate-400 disabled:cursor-not-allowed disabled:opacity-60"
+            onClick={onSync}
+            disabled={isSyncing}
           >
-            <span className={FIELD_LABEL_CLASSES}>To</span>
-            <Controller
-              control={control}
-              name="end"
-              render={({ field }) => (
-                <input
-                  {...field}
-                  type="date"
-                  value={field.value ?? dateRange.end}
-                  onChange={(event) => {
-                    field.onChange(event);
-                    handleDateChange("end", event.target.value);
-                  }}
-                  className={FIELD_CONTROL_CLASSES}
-                />
-              )}
-            />
-          </label>
-          <label
-            className={`${FIELD_WRAPPER_CLASSES} ${PRIMARY_FIELD_COL_SPAN}`}
-          >
-            <span className={FIELD_LABEL_CLASSES}>Flow</span>
-            <Controller
-              control={control}
-              name="flowFilter"
-              render={({ field }) => (
-                <select
-                  {...field}
-                  value={field.value ?? flowFilter}
-                  onChange={(event) => {
-                    field.onChange(event);
-                    const nextValue = event.target.value as FlowFilterValue;
-                    handleFlowChange(nextValue);
-                  }}
-                  className={FIELD_CONTROL_CLASSES}
-                >
-                  {FLOW_FILTERS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              )}
-            />
-          </label>
-          <label
-            className={`${FIELD_WRAPPER_CLASSES} ${PRIMARY_FIELD_COL_SPAN}`}
-          >
-            <span className={FIELD_LABEL_CLASSES}>Category</span>
-            <Controller
-              control={control}
-              name="categoryFilter"
-              render={({ field }) => (
-                <select
-                  {...field}
-                  value={field.value ?? categoryFilter}
-                  onChange={(event) => {
-                    field.onChange(event);
-                    handleCategoryChange(event.target.value);
-                  }}
-                  className={FIELD_CONTROL_CLASSES}
-                >
-                  <option value="all">All categories</option>
-                  {normalizedCategoryOptions.map((category) => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </select>
-              )}
-            />
-          </label>
-          <label
-            className={`${FIELD_WRAPPER_CLASSES} ${PRIMARY_FIELD_COL_SPAN}`}
-          >
-            <span className={FIELD_LABEL_CLASSES}>Sort</span>
-            <Controller
-              control={control}
-              name="sortOption"
-              render={({ field }) => (
-                <select
-                  {...field}
-                  value={field.value ?? sortOption}
-                  onChange={(event) => {
-                    field.onChange(event);
-                    const nextValue = event.target.value as SortOptionValue;
-                    handleSortChange(nextValue);
-                  }}
-                  className={FIELD_CONTROL_CLASSES}
-                >
-                  {SORT_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              )}
-            />
-          </label>
-          <label
-            className={`${FIELD_WRAPPER_CLASSES} ${DATE_FIELD_COL_SPAN}`}
-          >
-            <span className={FIELD_LABEL_CLASSES}>Rows</span>
-            <Controller
-              control={control}
-              name="pageSize"
-              render={({ field }) => (
-                <select
-                  {...field}
-                  value={field.value ?? String(pageSize)}
-                  onChange={(event) => {
-                    field.onChange(event);
-                    handlePageSizeChange(event.target.value);
-                  }}
-                  className={FIELD_CONTROL_CLASSES}
-                >
-                  {PAGE_SIZE_OPTIONS.map((option) => (
-                    <option value={String(option.value)} key={option.label}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              )}
-            />
-          </label>
+            {isSyncing ? "Syncing…" : "Sync"}
+          </button>
         </div>
       </div>
-      {!isCollapsed && dateError ? (
-        <p className="text-[0.6rem] text-rose-600">{dateError}</p>
-      ) : null}
-    </form>
+      <Collapsible.Root open={!isCollapsed}>
+        <Collapsible.Content
+          id={detailTrayId}
+          className={detailContentClasses}
+          aria-hidden={isCollapsed}
+        >
+          <div className="rounded-lg border border-slate-200 bg-white/95 p-3 shadow-sm shadow-slate-900/5">
+            <FilterTray
+              control={control}
+              dateRange={dateRange}
+              pageSize={pageSize}
+              categoryFilter={categoryFilter}
+              sortOption={sortOption}
+              normalizedCategoryOptions={normalizedCategoryOptions}
+              handleDateChange={handleDateChange}
+              handlePageSizeChange={handlePageSizeChange}
+              handleCategoryChange={handleCategoryChange}
+              handleSortChange={handleSortChange}
+              dateError={dateError}
+            />
+          </div>
+        </Collapsible.Content>
+      </Collapsible.Root>
+    </section>
   );
 }
 

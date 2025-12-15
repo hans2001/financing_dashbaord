@@ -233,66 +233,95 @@ describe("transactions listing", () => {
 });
 
 describe("transactions summary", () => {
-  it("aggregates spend and income from paginated batches", async () => {
-    const summaryBatch: Array<{
-      amount: string;
-      category: string[];
-    }> = [
-      { amount: "-20", category: ["Groceries"] },
-      { amount: "150", category: ["Income"] },
-      { amount: "-5", category: [] },
-    ];
+  it("aggregates spend and income via database aggregates", async () => {
+    prismaMock.transaction.aggregate
+      .mockImplementationOnce(async (args) => {
+        expect(args?.where?.amount).toEqual({ lt: 0 });
+        return {
+          _sum: { amount: new Prisma.Decimal("-25") },
+          _min: { amount: new Prisma.Decimal("-20") },
+          _count: { _all: 2 },
+        };
+      })
+      .mockImplementationOnce(async (args) => {
+        expect(args?.where?.amount).toEqual({ gt: 0 });
+        return {
+          _sum: { amount: new Prisma.Decimal("150") },
+          _max: { amount: new Prisma.Decimal("150") },
+          _count: { _all: 1 },
+        };
+      });
 
-    prismaMock.transaction.findMany
-      .mockResolvedValueOnce(summaryBatch)
-      .mockResolvedValueOnce([]);
+    prismaMock.transaction.groupBy
+      .mockResolvedValueOnce([
+        {
+          normalizedCategory: "Groceries",
+          _sum: { amount: new Prisma.Decimal("-20") },
+        },
+        {
+          normalizedCategory: "Uncategorized",
+          _sum: { amount: new Prisma.Decimal("-5") },
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          normalizedCategory: "Income",
+          _sum: { amount: new Prisma.Decimal("150") },
+        },
+      ]);
 
     const response = await transactionsSummaryGET(
       new Request("http://localhost/api/transactions/summary"),
     );
+    expect(response.status).toBe(200);
 
     const payload = await response.json();
-    expect(payload.totalSpent).toBe(25);
-    expect(payload.totalIncome).toBe(150);
-    expect(payload.largestExpense).toBe(20);
-    expect(payload.largestIncome).toBe(150);
-    expect(payload.spendCount).toBe(2);
-    expect(payload.incomeCount).toBe(1);
-    expect(payload.categoryTotals).toEqual({
-      Groceries: 20,
-      Uncategorized: 5,
-    });
-    expect(payload.incomeCategoryTotals).toEqual({
-      Income: 150,
+    expect(payload).toEqual({
+      totalSpent: 25,
+      totalIncome: 150,
+      largestExpense: 20,
+      largestIncome: 150,
+      spendCount: 2,
+      incomeCount: 1,
+      categoryTotals: {
+        Groceries: 20,
+        Uncategorized: 5,
+      },
+      incomeCategoryTotals: {
+        Income: 150,
+      },
     });
   });
 
   it("uses normalized categories when available", async () => {
-    prismaMock.transaction.findMany
+    const zeroTotals = {
+      _sum: { amount: new Prisma.Decimal("0") },
+      _min: { amount: new Prisma.Decimal("0") },
+      _max: { amount: new Prisma.Decimal("0") },
+      _count: { _all: 0 },
+    };
+
+    prismaMock.transaction.aggregate
+      .mockResolvedValueOnce(zeroTotals)
+      .mockResolvedValueOnce(zeroTotals);
+
+    prismaMock.transaction.groupBy
       .mockResolvedValueOnce([
         {
-          amount: "-30",
-          category: [],
           normalizedCategory: "Food",
-          name: "Uber Eats",
-          merchantName: "Uber Eats",
+          _sum: { amount: new Prisma.Decimal("-30") },
         },
         {
-          amount: "-70",
-          category: [],
           normalizedCategory: "Rent",
-          name: "Apartment",
-          merchantName: "Apartment",
-        },
-        {
-          amount: "200",
-          category: [],
-          normalizedCategory: "Business",
-          name: "Client Payment",
-          merchantName: "Client Payment",
+          _sum: { amount: new Prisma.Decimal("-70") },
         },
       ])
-      .mockResolvedValueOnce([]);
+      .mockResolvedValueOnce([
+        {
+          normalizedCategory: "Business",
+          _sum: { amount: new Prisma.Decimal("200") },
+        },
+      ]);
 
     const response = await transactionsSummaryGET(
       new Request("http://localhost/api/transactions/summary"),
@@ -309,10 +338,33 @@ describe("transactions summary", () => {
   });
 
   it("applies category filter when provided", async () => {
-    prismaMock.transaction.findMany.mockImplementationOnce(async (args) => {
-      expect(args?.where?.normalizedCategory).toBe("Rent");
-      return [];
-    });
+    prismaMock.transaction.aggregate
+      .mockImplementationOnce(async (args) => {
+        expect(args?.where?.normalizedCategory).toBe("Rent");
+        return {
+          _sum: { amount: new Prisma.Decimal("0") },
+          _min: { amount: new Prisma.Decimal("0") },
+          _count: { _all: 0 },
+        };
+      })
+      .mockImplementationOnce(async (args) => {
+        expect(args?.where?.normalizedCategory).toBe("Rent");
+        return {
+          _sum: { amount: new Prisma.Decimal("0") },
+          _max: { amount: new Prisma.Decimal("0") },
+          _count: { _all: 0 },
+        };
+      });
+
+    prismaMock.transaction.groupBy
+      .mockImplementationOnce(async (args) => {
+        expect(args?.where?.normalizedCategory).toBe("Rent");
+        return [];
+      })
+      .mockImplementationOnce(async (args) => {
+        expect(args?.where?.normalizedCategory).toBe("Rent");
+        return [];
+      });
 
     const response = await transactionsSummaryGET(
       new Request("http://localhost/api/transactions/summary?category=Rent"),

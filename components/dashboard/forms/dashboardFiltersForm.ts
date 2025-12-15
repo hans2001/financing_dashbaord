@@ -6,7 +6,6 @@ const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 export const isIsoDateString = (value: string) => ISO_DATE_REGEX.test(value);
 
 // Keep these tuples aligned with the exported filter options in dashboard-utils.ts.
-const FLOW_FILTER_VALUES = ["all", "spending", "inflow"] as const;
 const SORT_OPTION_VALUES = [
   "date_desc",
   "date_asc",
@@ -34,7 +33,6 @@ const dashboardFiltersSchema = z
       .string()
       .regex(ISO_DATE_REGEX, { message: "End date must be YYYY-MM-DD" }),
     pageSize: z.enum(PAGE_SIZE_STRING_VALUES),
-    flowFilter: z.enum(FLOW_FILTER_VALUES),
     categoryFilter: z.string(),
     sortOption: z.enum(SORT_OPTION_VALUES),
   })

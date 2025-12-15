@@ -120,7 +120,7 @@ function SummaryPanelComponent({
 }: SummaryPanelProps) {
   return (
     <div className="flex min-w-0 flex-col gap-3">
-      <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm shadow-slate-900/5">
+      <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm shadow-slate-900/5">
         <div className="pb-2">
           <p className="text-[0.5rem] uppercase tracking-[0.3em] text-slate-400">
             Spending summary
@@ -191,7 +191,7 @@ function SummaryPanelComponent({
           </div>
         </dl>
       </div>
-      <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm shadow-slate-900/5">
+      <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm shadow-slate-900/5">
         <p className="text-[0.55rem] uppercase tracking-[0.3em] text-slate-400">
           Top categories
         </p>

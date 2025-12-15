@@ -24,11 +24,11 @@
 
 ## Architecture & modules
 
-- [ ] Break `app/dashboard/page.tsx` into smaller modules (filters, transactions table, summary/pricing panels) so each file stays under ~300 lines and the parent page simply composes the child components.
-- [ ] Extract helper hooks for filters, summary data, and selection state into dedicated files so each child component relies on focused hooks instead of inline logic.
+- [x] Break `app/dashboard/page.tsx` into smaller modules (filters, transactions table, summary/pricing panels) so each file stays under ~300 lines and the parent page simply composes the child components.
+- [x] Extract helper hooks for filters, summary data, and selection state into dedicated files so each child component relies on focused hooks instead of inline logic.
 - [ ] Audit shared UI primitives and hooks to determine what we can reuse; adopt `shadcn/ui` (or another consistent primitive set) for cards, buttons, and typography when new components land.
-- [ ] Build targeted UI/component tests for `FiltersPanel`, `TransactionsTable`, and `SummaryPanel` (React Testing Library + mocked fetch/React Query) to exercise sorting, pagination, and filtering and to “kill crucial mutants.”
-- [ ] Split `useDashboardState` into smaller, focused hooks (e.g., `useTransactionsFilters`, `useSelectionState`, `useSummaryData`) so each concern can be tested and memoized independently.
+- [ ] Build targeted UI/component tests for `FiltersPanel`, `TransactionsTable`, and `SummaryPanel` (React Testing Library + mocked fetch/React Query) to exercise sorting, pagination, and filtering and to “kill crucial mutants.” (Existing tests cover `FilterChips` and `LinkedAccountsPanel` so far.)
+- [x] Split `useDashboardState` into smaller, focused hooks (e.g., `useTransactionsFilters`, `useSelectionState`, `useSummaryData`) so each concern can be tested and memoized independently.
 - [x] Introduce a data-fetching helper such as React Query or SWR for accounts, transactions, and summary calls to standardize caching, retries, and background refresh.
 - [x] Pair `react-hook-form` with Zod schemas for filters and description editing so validation rules, defaults, and types stay in sync.
 - [ ] Expand component/API test coverage using React Testing Library plus supertest/next-test-api-route-handler to cover the new modules and locked-down APIs.
@@ -36,7 +36,7 @@
 ## Platform & automation
 
 - [ ] Layer on lightweight budgeting goals (per-category and household) that highlight spend vs. target so overages stand out immediately.
-- [ ] Introduce shared saved views/workspaces so Hans and Yuki can pin their own account selections and column presets, including a “family view” that aggregates every linked account plus user-specific filters.
+- [x] Introduce shared saved views/workspaces — including the new `/dashboard/manage` workspace screen — so Hans and Yuki can pin account selections, filters, and column presets before returning to the main dashboard.
 - [ ] Provide configurable alerts (email/push/webhooks) for suspicious spikes, large transfers, or low balances to help catch issues without babysitting the dashboard.
 - [ ] Deploy the database and dashboard website with automated pipelines so the production stack mirrors local QA/CI environments.
 
@@ -49,9 +49,14 @@
 - [ ] Precompute summary widgets on the server (edge cache or scheduled jobs) and hydrate them as static props so we avoid heavy client calculations.
 - [ ] Defer non-critical analytics/components with `useDeferredValue`/`useTransition` hooks so filtering stays responsive.
 - [ ] Profile expensive hooks like `useDashboardState`/`useSelectionState` and split responsibilities so state updates stay localized.
+- [ ] Aggregate summary totals/counts/categories inside the database and reuse a cached currency formatter before revisiting table virtualization so the memory/performance profile stays stable.
 
 ### Timeline / readiness
 
 - Q3 (current): Monitor size/perf casually but defer all optimization work; codebase + data volume still small.
 - Q4: Re-evaluate once shared workspaces + category filters ship and data balloons past ~10k transactions; only then kickoff baseline capture task.
 - 2025+ or >25k monthly rows: prioritize virtualization/caching tasks; until then, keep them parked so we focus on shipping core features.
+
+## Current components to revisit
+
+- [ ] Review `components/dashboard/TransactionsTable.tsx`, `components/dashboard/filters/FilterSummary.tsx`, `app/page.tsx`, `components/connect/PlaidConnectPanel.tsx`, and `components/dashboard/ManageWorkspace.tsx` so any remaining polish, tests, or TODOs get captured before the next sprint.

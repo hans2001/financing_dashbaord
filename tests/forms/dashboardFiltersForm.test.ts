@@ -6,7 +6,6 @@ const baseValues = {
   start: "2024-01-01",
   end: "2024-01-31",
   pageSize: "25",
-  flowFilter: "all",
   categoryFilter: "travel",
   sortOption: "date_desc",
 };

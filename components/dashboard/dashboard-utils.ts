@@ -23,11 +23,31 @@ export const isBalanceStale = (balanceLastUpdated?: string | null) => {
     : Date.now() - timestamp > BALANCE_STALE_THRESHOLD_MS;
 };
 
-export const formatCurrency = (value: number) =>
-  new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(value);
+const currencyFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+});
+
+export const formatCurrency = (value: number) => currencyFormatter.format(value);
+
+export const formatBalanceValue = (value?: number | null) =>
+  typeof value === "number" ? formatCurrency(value) : "--";
+
+export const formatBalanceTimestamp = (value?: string | null) => {
+  if (!value) {
+    return "No balance data yet";
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "No balance data yet";
+  }
+  return `Updated ${date.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  })}`;
+};
 
 export const CATEGORY_BADGES: Record<
   string,
@@ -103,7 +123,7 @@ export const getCategoryBadge = (categoryPath?: string) => {
   return CATEGORY_BADGES[baseCategory] ?? CATEGORY_BADGES[DEFAULT_CATEGORY];
 };
 
-export const truncateInline = (value: string, maxLength = 70) => {
+export const truncateInline = (value: string, maxLength = 45) => {
   if (!value) {
     return value;
   }
@@ -137,6 +157,15 @@ export const PAGE_SIZE_OPTIONS = [
 ] as const;
 export type PageSizeOptionValue =
   (typeof PAGE_SIZE_OPTIONS)[number]["value"];
+export const DEFAULT_NUMERIC_PAGE_SIZE =
+  25 as Exclude<PageSizeOptionValue, "all">;
+const FIRST_NUMERIC_PAGE_SIZE_VALUE =
+  PAGE_SIZE_OPTIONS.find((option) => option.value !== "all")
+    ?.value as
+    | Exclude<PageSizeOptionValue, "all">
+    | undefined;
+export const DEFAULT_PAGE_SIZE_OPTION: PageSizeOptionValue =
+  (FIRST_NUMERIC_PAGE_SIZE_VALUE ?? DEFAULT_NUMERIC_PAGE_SIZE) as PageSizeOptionValue;
 export const SORT_OPTIONS = [
   { value: "date_desc", label: "Date (newest first)" },
   { value: "date_asc", label: "Date (oldest first)" },
@@ -146,6 +175,8 @@ export const SORT_OPTIONS = [
   { value: "merchant_desc", label: "Merchant (Z → A)" },
 ] as const;
 export type SortOptionValue = (typeof SORT_OPTIONS)[number]["value"];
+export const DEFAULT_SORT_OPTION =
+  (SORT_OPTIONS[0]?.value ?? "date_desc") as SortOptionValue;
 export const FLOW_FILTERS = [
   { value: "all", label: "All activity" },
   { value: "spending", label: "Spending only" },

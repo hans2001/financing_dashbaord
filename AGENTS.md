@@ -34,3 +34,7 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 - Fixed TS errors in `/api/transactions` routes by normalizing undefined strings (transaction names, summary selects) and keeping Prisma payload types aligned.
 - Hardened dashboard state defaults (page size, sort, flow filter, date range) and summary panel props/colors to satisfy strict TypeScript checks.
 - Added safer date formatting helpers to guarantee ISO strings even under `noUncheckedIndexedAccess`.
+
+## Project-wide rule
+
+- **Pre-implementation documentation:** Every new feature request or refactor must be accompanied by a documented design / detailed specification before any coding begins; capture the plan in a reply or dedicated spec file so future Codex threads can reference the intended approach alongside the OpenSpec workflow.

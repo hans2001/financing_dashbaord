@@ -51,7 +51,11 @@ describe("LinkedAccountsPanel", () => {
     expect(screen.getByText("Balance older than 24h").textContent).toBe(
       "Balance older than 24h",
     );
-    expect(screen.getByText("Current · $5,400.34").textContent).toBe("Current · $5,400.34");
+    expect(screen.getByText("2 connected").textContent).toBe("2 connected");
+    expect(screen.getByText("$5,400.34").textContent).toBe("$5,400.34");
+    expect(screen.getByText("Available · $5,250.10").textContent).toBe(
+      "Available · $5,250.10",
+    );
     expect(screen.getByText("Limit · $5,000.00").textContent).toBe(
       "Limit · $5,000.00",
     );
@@ -103,7 +107,7 @@ describe("LinkedAccountsPanel", () => {
       />,
     );
 
-    expect(screen.queryByText(/Current ·/i)).toBeNull();
+    expect(screen.queryByText(/Available ·/i)).toBeNull();
     expect(screen.getByText("$5,400.34").textContent).toBe("$5,400.34");
   });
 });

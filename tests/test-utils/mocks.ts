@@ -37,6 +37,8 @@ export const prismaMock: PrismaMock = {
   transaction: {
     findMany: createMockFn(),
     count: createMockFn(),
+    aggregate: createMockFn(),
+    groupBy: createMockFn(),
     findUnique: createMockFn(),
     upsert: createMockFn(),
     update: createMockFn(),

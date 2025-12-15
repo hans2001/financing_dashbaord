@@ -4,12 +4,24 @@ import { jsonErrorResponse } from "@/lib/api-response";
 import { DEMO_USER_ID } from "@/lib/demo-user";
 import { prisma } from "@/lib/prisma";
 import { authorizeRequest } from "@/lib/family-auth";
-import { getTransactionCategoryPath } from "@/lib/transaction-category";
+import type { Prisma } from "@prisma/client";
+
 type TransactionWhereInput = NonNullable<
   Parameters<typeof prisma.transaction.findMany>[0]
 >["where"];
 
-const SUMMARY_CHUNK_SIZE = 1000;
+const decimalToNumber = (value?: Prisma.Decimal | null) => {
+  if (value === null || value === undefined) {
+    return 0;
+  }
+  if (typeof value === "number") {
+    return value;
+  }
+  if (typeof value.toNumber === "function") {
+    return value.toNumber();
+  }
+  return Number(value);
+};
 
 type SummaryResponse = {
   totalSpent: number;
@@ -85,84 +97,76 @@ export async function GET(request: Request) {
       where.normalizedCategory = categoryParam;
     }
 
-    let offset = 0;
-    let totalSpent = 0;
-    let totalIncome = 0;
-    let largestExpense = 0;
-    let largestIncome = 0;
-    let spendCount = 0;
-    let incomeCount = 0;
-    const categoryTotals: Record<string, number> = {};
-    const incomeCategoryTotals: Record<string, number> = {};
+    const spendWhere: TransactionWhereInput = {
+      ...where,
+      amount: { lt: 0 },
+    };
+    const incomeWhere: TransactionWhereInput = {
+      ...where,
+      amount: { gt: 0 },
+    };
 
-    while (true) {
-      const batch = await prisma.transaction.findMany({
-        where,
-        orderBy: {
-          date: "desc",
-        },
-        take: SUMMARY_CHUNK_SIZE,
-        skip: offset,
-        select: {
-          amount: true,
-          category: true,
-          name: true,
-          merchantName: true,
-          normalizedCategory: true,
-        },
-      });
+    const [
+      spendAggregate,
+      incomeAggregate,
+      spendCategoryGroups,
+      incomeCategoryGroups,
+    ] = await Promise.all([
+      prisma.transaction.aggregate({
+        where: spendWhere,
+        _sum: { amount: true },
+        _min: { amount: true },
+        _count: { _all: true },
+      }),
+      prisma.transaction.aggregate({
+        where: incomeWhere,
+        _sum: { amount: true },
+        _max: { amount: true },
+        _count: { _all: true },
+      }),
+      prisma.transaction.groupBy({
+        where: spendWhere,
+        by: ["normalizedCategory"],
+        _sum: { amount: true },
+      }),
+      prisma.transaction.groupBy({
+        where: incomeWhere,
+        by: ["normalizedCategory"],
+        _sum: { amount: true },
+      }),
+    ]);
 
-      if (batch.length === 0) {
-        break;
-      }
-
-      offset += batch.length;
-
-      for (const transaction of batch) {
-        const amount = transaction.amount.toNumber
-          ? transaction.amount.toNumber()
-          : Number(transaction.amount.toString());
-        if (amount < 0) {
-          const absAmount = Math.abs(amount);
-          totalSpent += absAmount;
-          largestExpense = Math.max(largestExpense, absAmount);
-          spendCount += 1;
-          const label =
-            transaction.normalizedCategory ??
-            getTransactionCategoryPath({
-              category: transaction.category,
-              name: transaction.name,
-              merchantName: transaction.merchantName,
-            });
-          categoryTotals[label] = (categoryTotals[label] ?? 0) + absAmount;
-        } else if (amount > 0) {
-          totalIncome += amount;
-          largestIncome = Math.max(largestIncome, amount);
-          incomeCount += 1;
-          const label =
-            transaction.normalizedCategory ??
-            getTransactionCategoryPath({
-              category: transaction.category,
-              name: transaction.name,
-              merchantName: transaction.merchantName,
-            });
-          incomeCategoryTotals[label] =
-            (incomeCategoryTotals[label] ?? 0) + amount;
+    const categoryTotals = spendCategoryGroups.reduce<Record<string, number>>(
+      (collector, group) => {
+        const label = group.normalizedCategory ?? "Uncategorized";
+        const sum = Math.abs(decimalToNumber(group._sum.amount));
+        if (sum === 0) {
+          return collector;
         }
+        collector[label] = sum;
+        return collector;
+      },
+      {},
+    );
+    const incomeCategoryTotals = incomeCategoryGroups.reduce<
+      Record<string, number>
+    >((collector, group) => {
+      const label = group.normalizedCategory ?? "Uncategorized";
+      const sum = decimalToNumber(group._sum.amount);
+      if (sum === 0) {
+        return collector;
       }
-
-      if (batch.length < SUMMARY_CHUNK_SIZE) {
-        break;
-      }
-    }
+      collector[label] = sum;
+      return collector;
+    }, {});
 
     const response: SummaryResponse = {
-      totalSpent,
-      totalIncome,
-      largestExpense,
-      largestIncome,
-      spendCount,
-      incomeCount,
+      totalSpent: Math.abs(decimalToNumber(spendAggregate._sum.amount)),
+      totalIncome: decimalToNumber(incomeAggregate._sum.amount),
+      largestExpense: Math.abs(decimalToNumber(spendAggregate._min.amount)),
+      largestIncome: decimalToNumber(incomeAggregate._max.amount),
+      spendCount: spendAggregate._count._all ?? 0,
+      incomeCount: incomeAggregate._count._all ?? 0,
       categoryTotals,
       incomeCategoryTotals,
     };

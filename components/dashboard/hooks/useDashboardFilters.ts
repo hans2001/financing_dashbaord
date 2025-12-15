@@ -6,6 +6,8 @@ import {
   FLOW_FILTERS,
   PAGE_SIZE_OPTIONS,
   SORT_OPTIONS,
+  DEFAULT_NUMERIC_PAGE_SIZE,
+  DEFAULT_PAGE_SIZE_OPTION,
 } from "../dashboard-utils";
 import type {
   FlowFilterValue,
@@ -40,17 +42,12 @@ export function useDashboardFilters(): DashboardFilters {
   const [dateRange, setDateRangeState] = useState(() =>
     computeDefaultDateRange(),
   );
-  const DEFAULT_NUMERIC_PAGE_SIZE = 25 as Exclude<PageSizeOptionValue, "all">;
   const numericDefaultPageSize =
     (PAGE_SIZE_OPTIONS.find(
       (option) => option.value !== "all",
     )?.value as Exclude<PageSizeOptionValue, "all"> | undefined) ??
     DEFAULT_NUMERIC_PAGE_SIZE;
-  const defaultPageSizeOption: PageSizeOptionValue = PAGE_SIZE_OPTIONS.some(
-    (option) => option.value === "all",
-  )
-    ? "all"
-    : numericDefaultPageSize;
+  const defaultPageSizeOption: PageSizeOptionValue = DEFAULT_PAGE_SIZE_OPTION;
   const defaultSort = (SORT_OPTIONS[0]?.value ?? "date_desc") as SortOptionValue;
   const defaultFlowFilter = (FLOW_FILTERS[0]?.value ?? "all") as FlowFilterValue;
   const defaultCategoryFilter = "all";

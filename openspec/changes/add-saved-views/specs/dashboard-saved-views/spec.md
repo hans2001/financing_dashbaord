@@ -34,3 +34,10 @@ The saved-view API SHALL return metadata such as view names, pinned flag, and th
 #### Scenario: render view metadata in the control
 - **WHEN** the Accounts & Spending controls query the saved-view list
 - **THEN** the API SHALL respond with each view’s identifier, name, pinned status, and account bindings so the UI can display the name, highlight pinned items, and know which accounts to select when the view is applied.
+
+### Requirement: Manage mode works inside a single shared grid
+The dashboard’s Manage mode SHALL not introduce nested tabs below the primary navigation. Instead, it SHALL reuse the same View-mode layout by placing the saved-view selector, summary, and CRUD actions on the left slab and the linked-account binding list on the right slab so every view-and-account action is accessible within one cohesive grid.
+
+#### Scenario: operate on a saved view and its accounts without switching sub-tabs
+- **WHEN** the user opens Manage, the primary navigation stays the same and the right column immediately shows all linked accounts with their attached/available state
+- **THEN** applying a view from the selection box SHALL refresh both the left controls and the right account list to reflect that view so the user can rename/save/delete and pick account bindings without ever switching to another nested tab
