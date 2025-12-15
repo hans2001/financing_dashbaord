@@ -7,6 +7,7 @@ The transaction filters on the dashboard currently mimic a dense spreadsheet row
 - Introduce a compact filter bar that surfaces the most valuable controls (account picker, date range summary, flow toggles) and displays active criteria with removable chips, similar to Linear or Notion’s filter chips.
 - Wrap the full set of filters in an expandable/collapsible panel (accordion or details pattern) so the rest of the form can stay hidden until explicitly opened; ensure the collapse state syncs with `DashboardPage` and the panel animates and focuses predictably.
 - Break the existing `FiltersPanel` into focused sub-components and helper hooks so each control and validation helper stays within ~300 lines while keeping form state in sync with `useDashboardState`; cover the new components with focused tests for the expanded layout, chip interactions, and collapse state.
+- Ensure collapsing the filters does not shift the transactions table vertically by overlaying or reserving space for the panel and by keeping the table container layout stable regardless of filter visibility.
 
 ## Impact
 - Affected specs: `openspec/specs/dashboard/spec.md` (new requirement for filter UX)

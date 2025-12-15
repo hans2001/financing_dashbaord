@@ -4,3 +4,4 @@
 - [ ] 1.3 Update `DashboardPage` to orchestrate the collapsible behavior (reuse `areFiltersCollapsed`), wire the chip interactions, and ensure `useDashboardState` still provides the necessary setters.
 - [ ] 1.4 Add tests that assert the compact view renders the prioritized controls and chips, the collapse toggle preserves state, and clearing a chip resets the underlying filter.
 - [ ] 1.5 Verify the new layout through manual UX review/storybook preview and note any follow-up polish (spacing/icons) before marking the change done.
+- [ ] 1.6 Confirm that toggling the filters never shifts the transactions table’s vertical position by reserving layout space or overlaying the panel, and capture the validation steps/results.

@@ -13,6 +13,13 @@ The system SHALL derive a pill for each active filter (account, dates, flow, cat
 - **WHEN** any filter value changes, the chip strip MUST update to show a label such as “Account: Checking”, “Dates: Jan 1 – Jan 31”, or “Flow: Spent”; each chip and the strip’s “Clear all” affordance MUST call the setters from `useDashboardState` to reset that filter and clear selections/pagination.
 - **THEN** the chip strip MUST survive while the tray is collapsed, removing all chips (or clicking “Clear all”) MUST reset the corresponding filters, and the UI MUST show placeholder text when no additional filters are applied.
 
+### Requirement: Collapsing filters does not shift the transactions table
+Focusing on the transactions table is important for data-heavy work, so collapsing or expanding the filters SHALL not change the table’s vertical position or cause an unexpected viewport jump; the panel may overlay the content or reserve fixed space, but the first row of transactions must stay where it was before the toggle.
+
+#### Scenario: Toggle filters while the user reads the table
+- **WHEN** the user clicks “Hide filters” or “Show filters,” the filter controls MAY animate, but the `TransactionsTable` container’s `offsetTop` must remain unchanged (or the same as just before the toggle), and the caret-involved focus control SHOULD stay glued to the header.
+- **THEN** the table content MUST remain visible without layout shift, the toggle button MUST still be accessible (for keyboard/assistive tech), and opening the filters again MUST not push the table downward.
+
 ### Requirement: Filter controls and helpers stay modular and testable
 Every new filter sub-component (summary row, chips, detail tray) SHALL reside in its own file with supporting helpers so the module size stays under ~300 lines and logic such as normalizing category options or date validation remains encapsulated.
 

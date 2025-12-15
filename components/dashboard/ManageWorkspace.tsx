@@ -7,66 +7,92 @@ import type {
   SavedViewMetadata,
   SerializedSavedView,
 } from "./types/workspace";
+import { LinkedAccountsPanel } from "./LinkedAccountsPanel";
 import { SavedViewControls } from "./SavedViewControls";
 
-type SavedViewHeroProps = {
+type ManageWorkspaceProps = {
+  accounts: Account[];
+  isLoadingAccounts: boolean;
+  accountsError: string | null;
+  showAccountsPanel: boolean;
+  onToggleShowAccountsPanel: () => void;
+  onRefreshAccounts: () => Promise<void>;
+  isSyncing: boolean;
   savedViews: SerializedSavedView[];
   activeSavedViewId: string | null;
-  currentViewMetadata: SavedViewMetadata;
-  accounts: Account[];
-  selectedAccounts: string[];
-  onAccountChange: (value: string[]) => void;
-  isLoading: boolean;
-  error: string | null;
-  onViewSelect: (viewId: string) => void;
-  onSaveView: (
+  isSavedViewsLoading: boolean;
+  savedViewsError: string | null;
+  isActivatingView: boolean;
+  activateError: string | null;
+  handleSavedViewSelect: (viewId: string) => Promise<void>;
+  handleSaveCurrentView: (
     name: string,
     options?: { isPinned?: boolean; viewId?: string | null },
-  ) => void;
-  isSaving: boolean;
-  saveError: string | null;
+  ) => Promise<void>;
+  isSavingView: boolean;
+  saveViewError: string | null;
+  currentViewMetadata: SavedViewMetadata;
+  selectedAccounts: string[];
+  onSelectedAccountsChange: (value: string[]) => void;
 };
 
-type SavedViewTab = "views" | "manage";
+type ManageTab = "views" | "manage" | "accounts";
 
-const tabDefinitions: Record<SavedViewTab, { label: string }> = {
-  views: { label: "Saved views" },
-  manage: { label: "Manage accounts" },
+const tabDefinitions: Record<ManageTab, { label: string; description: string }> = {
+  views: {
+    label: "Saved views",
+    description: "Switch between reusable filter sets and save fresh ones.",
+  },
+  manage: {
+    label: "Manage views",
+    description:
+      "Rename the active view or choose which accounts power it.",
+  },
+  accounts: {
+    label: "Linked accounts",
+    description: "Review and refresh connected institutions in one place.",
+  },
 };
 
-export function SavedViewHero({
+const NEW_VIEW_DRAFT_KEY = "__new-view-draft__";
+
+export function ManageWorkspace({
   accounts,
+  isLoadingAccounts,
+  accountsError,
+  showAccountsPanel,
+  onToggleShowAccountsPanel,
+  onRefreshAccounts,
+  isSyncing,
   savedViews,
   activeSavedViewId,
-  selectedAccounts,
-  onAccountChange,
-  isLoading,
-  error,
-  onViewSelect,
-  onSaveView,
-  isSaving,
-  saveError,
+  isSavedViewsLoading,
+  savedViewsError,
+  isActivatingView,
+  activateError,
+  handleSavedViewSelect,
+  handleSaveCurrentView,
+  isSavingView,
+  saveViewError,
   currentViewMetadata,
-}: SavedViewHeroProps) {
-  const [activeTab, setActiveTab] = useState<SavedViewTab>("views");
+  selectedAccounts,
+  onSelectedAccountsChange,
+}: ManageWorkspaceProps) {
+  const [activeTab, setActiveTab] = useState<ManageTab>("views");
+
   const activeView = useMemo(
     () =>
-      savedViews.find((view) => view.id === activeSavedViewId) ?? savedViews[0],
+      savedViews.find((view) => view.id === activeSavedViewId) ??
+      savedViews[0],
     [activeSavedViewId, savedViews],
   );
-  const currentViewId = activeView?.id ?? null;
-  const [draftState, setDraftState] = useState(() => ({
-    viewId: currentViewId,
-    value: activeView?.name ?? "",
-  }));
-  const isDraftForCurrentView = draftState.viewId === currentViewId;
-  const draftName = isDraftForCurrentView
-    ? draftState.value
-    : activeView?.name ?? "";
 
-  const handleDraftNameChange = (value: string) => {
-    setDraftState({ viewId: currentViewId, value });
-  };
+  const currentViewId = activeView?.id ?? null;
+
+  const [draftNames, setDraftNames] = useState<Record<string, string>>({});
+  const currentDraftKey = currentViewId ?? NEW_VIEW_DRAFT_KEY;
+  const currentDraftName = draftNames[currentDraftKey];
+  const draftName = currentDraftName ?? activeView?.name ?? "";
 
   const normalizedSelectedAccounts = useMemo(() => {
     if (selectedAccounts.includes("all")) {
@@ -87,69 +113,80 @@ export function SavedViewHero({
       nextSet.add(accountId);
     }
     const nextSelection =
-      nextSet.size === 0 ? ["all"] : Array.from(nextSet).filter(Boolean);
-    onAccountChange(nextSelection);
+      nextSet.size === 0
+        ? ["all"]
+        : Array.from(nextSet).filter(Boolean);
+    onSelectedAccountsChange(nextSelection);
   };
 
   const handleSelectAll = () => {
     if (accounts.length === 0) {
       return;
     }
-    onAccountChange(["all"]);
+    onSelectedAccountsChange(["all"]);
+  };
+
+  const handleDraftNameChange = (value: string) => {
+    setDraftNames((previous) => ({
+      ...previous,
+      [currentDraftKey]: value,
+    }));
   };
 
   const handleUpdateView = () => {
     if (!draftName.trim() || !activeSavedViewId) {
       return;
     }
-    onSaveView(draftName.trim(), { viewId: activeSavedViewId });
+    void handleSaveCurrentView(draftName.trim(), {
+      viewId: activeSavedViewId,
+    });
   };
 
   const handleSaveNewView = () => {
     if (!draftName.trim()) {
       return;
     }
-    onSaveView(draftName.trim());
+    void handleSaveCurrentView(draftName.trim());
   };
 
   return (
-    <section className="w-full space-y-3">
-      <nav className="flex items-center gap-2">
-        {(Object.keys(tabDefinitions) as SavedViewTab[]).map((tabKey) => (
-          <button
-            key={tabKey}
-            type="button"
-            className={`rounded-full px-3 py-1.5 text-sm font-semibold transition-all ${
-              activeTab === tabKey
-                ? "bg-slate-900 text-white"
-                : "border border-slate-200 bg-white text-slate-700"
-            }`}
-            onClick={() => setActiveTab(tabKey)}
-          >
-            {tabDefinitions[tabKey].label}
-          </button>
-        ))}
-      </nav>
+    <section className="space-y-4 rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm shadow-slate-900/5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <nav className="flex flex-wrap items-center gap-2">
+          {(Object.keys(tabDefinitions) as ManageTab[]).map((tabKey) => (
+            <button
+              key={tabKey}
+              type="button"
+              className={`rounded-full px-4 py-1.5 text-sm font-semibold transition ${
+                activeTab === tabKey
+                  ? "bg-slate-900 text-white"
+                  : "border border-slate-200 bg-white text-slate-700"
+              }`}
+              onClick={() => setActiveTab(tabKey)}
+            >
+              {tabDefinitions[tabKey].label}
+            </button>
+          ))}
+        </nav>
+        <p className="text-[0.65rem] text-slate-500">
+          {tabDefinitions[activeTab].description}
+        </p>
+      </div>
       {activeTab === "views" && (
         <SavedViewControls
           savedViews={savedViews}
           activeSavedViewId={activeSavedViewId}
-          isLoading={isLoading}
-          error={error}
-          onViewSelect={onViewSelect}
-          onSaveView={onSaveView}
-          isSaving={isSaving}
-          saveError={saveError}
+          isLoading={isSavedViewsLoading || isActivatingView}
+          error={savedViewsError ?? activateError ?? null}
+          onViewSelect={handleSavedViewSelect}
+          onSaveView={handleSaveCurrentView}
+          isSaving={isSavingView}
+          saveError={saveViewError}
           currentViewMetadata={currentViewMetadata}
         />
       )}
-      <p className="text-[0.65rem] text-slate-500">
-        {activeTab === "views"
-          ? "Browsing saved views"
-          : "Managing account bindings for a view"}
-      </p>
       {activeTab === "manage" && (
-        <div className="space-y-3 rounded-3xl border border-slate-200 bg-white/80 p-4 shadow-sm shadow-slate-900/5">
+        <div className="space-y-3 rounded-3xl border border-slate-200 bg-slate-50/70 p-4 shadow-sm shadow-slate-900/5">
           <div className="space-y-1">
             <label
               htmlFor="managed-view-name"
@@ -159,7 +196,7 @@ export function SavedViewHero({
             </label>
             <input
               id="managed-view-name"
-              className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-slate-400 focus:outline-none"
+              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-slate-400 focus:outline-none"
               value={draftName}
               onChange={(event) => handleDraftNameChange(event.target.value)}
               placeholder={
@@ -191,7 +228,8 @@ export function SavedViewHero({
                     type="checkbox"
                     className="h-4 w-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900"
                     checked={
-                      normalizedSelectedAccounts.includes(account.id) || allAccountsSelected
+                      normalizedSelectedAccounts.includes(account.id) ||
+                      allAccountsSelected
                     }
                     onChange={() => toggleAccount(account.id)}
                   />
@@ -205,24 +243,24 @@ export function SavedViewHero({
               <button
                 type="button"
                 className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold uppercase tracking-[0.35em] text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
-                disabled={isSaving}
+                disabled={isSavingView}
                 onClick={handleUpdateView}
               >
-                {isSaving ? "Saving…" : "Update view"}
+                {isSavingView ? "Saving…" : "Update view"}
               </button>
             ) : null}
             <button
               type="button"
               className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold uppercase tracking-[0.35em] text-slate-700 transition hover:border-slate-400 disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={isSaving}
+              disabled={isSavingView}
               onClick={handleSaveNewView}
             >
-              {isSaving ? "Saving…" : "Save new view"}
+              {isSavingView ? "Saving…" : "Save new view"}
             </button>
           </div>
-          {(error || saveError) && (
+          {(saveViewError || savedViewsError || activateError) && (
             <p className="text-[0.65rem] text-rose-600">
-              {saveError ?? error}
+              {saveViewError ?? savedViewsError ?? activateError}
             </p>
           )}
           <p className="text-[0.65rem] text-slate-500">
@@ -231,6 +269,17 @@ export function SavedViewHero({
               : `${normalizedSelectedAccounts.length} / ${accounts.length} accounts selected.`}
           </p>
         </div>
+      )}
+      {activeTab === "accounts" && (
+        <LinkedAccountsPanel
+          accounts={accounts}
+          isLoading={isLoadingAccounts}
+          error={accountsError}
+          showAll={showAccountsPanel}
+          onToggleShow={onToggleShowAccountsPanel}
+          onRefresh={onRefreshAccounts}
+          isSyncing={isSyncing}
+        />
       )}
     </section>
   );

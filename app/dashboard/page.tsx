@@ -4,7 +4,7 @@ import { Suspense, lazy, useState } from "react";
 
 import { FiltersPanel } from "@/components/dashboard/FiltersPanel";
 import { LinkedAccountsPanel } from "@/components/dashboard/LinkedAccountsPanel";
-import { SavedViewHero } from "@/components/dashboard/SavedViewHero";
+import { ManageWorkspace } from "@/components/dashboard/ManageWorkspace";
 import { TransactionsTable } from "@/components/dashboard/TransactionsTable";
 import { useDashboardState } from "@/components/dashboard/useDashboardState";
 
@@ -95,7 +95,7 @@ export default function DashboardPage() {
     <section className="flex flex-col gap-4 xl:flex-row xl:items-start">
       <div className="flex min-w-0 flex-[0.85] flex-col gap-3">
         <div className="flex flex-1 flex-col gap-0 rounded-3xl border border-slate-200 bg-white p-3 shadow-sm shadow-slate-900/5">
-          <div className="w-full max-w-[920px]">
+          <div className="w-full">
             <FiltersPanel
               dateRange={dateRange}
               onDateRangeChange={setDateRange}
@@ -199,22 +199,6 @@ export default function DashboardPage() {
                 ),
               )}
             </nav>
-            {activeMode === "manage" ? (
-              <SavedViewHero
-                savedViews={savedViews}
-                activeSavedViewId={activeSavedViewId}
-                isLoading={isSavedViewsLoading || isActivatingView}
-                error={savedViewsError ?? activateError ?? null}
-                onViewSelect={handleSavedViewSelect}
-                onSaveView={handleSaveCurrentView}
-                isSaving={isSavingView}
-                saveError={saveViewError}
-                currentViewMetadata={currentViewMetadata}
-                accounts={accounts}
-                selectedAccounts={selectedAccounts}
-                onAccountChange={setSelectedAccounts}
-              />
-            ) : null}
           </div>
           <div className="flex w-full items-center justify-end sm:w-auto">
             <button
@@ -227,7 +211,34 @@ export default function DashboardPage() {
             </button>
           </div>
         </section>
-        {activeMode === "view" ? renderOverview : null}
+        {activeMode === "view" ? (
+          renderOverview
+        ) : (
+          <ManageWorkspace
+            accounts={accounts}
+            isLoadingAccounts={isLoadingAccounts}
+            accountsError={accountsError}
+            showAccountsPanel={showAccountsPanel}
+            onToggleShowAccountsPanel={() =>
+              setShowAccountsPanel((prev) => !prev)
+            }
+            onRefreshAccounts={handleSync}
+            isSyncing={isSyncing}
+            savedViews={savedViews}
+            activeSavedViewId={activeSavedViewId}
+            isSavedViewsLoading={isSavedViewsLoading}
+            savedViewsError={savedViewsError}
+            isActivatingView={isActivatingView}
+            activateError={activateError}
+            handleSavedViewSelect={handleSavedViewSelect}
+            handleSaveCurrentView={handleSaveCurrentView}
+            isSavingView={isSavingView}
+            saveViewError={saveViewError}
+            currentViewMetadata={currentViewMetadata}
+            selectedAccounts={selectedAccounts}
+            onSelectedAccountsChange={setSelectedAccounts}
+          />
+        )}
       </div>
     </main>
   );

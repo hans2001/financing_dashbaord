@@ -168,7 +168,7 @@ function FiltersPanelComponent({
 
   return (
     <form noValidate className="flex flex-col gap-2 text-[0.65rem]">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex w-full items-center justify-between gap-3">
         <h2 className="text-sm font-semibold text-slate-900">Transactions</h2>
         <button
           type="button"

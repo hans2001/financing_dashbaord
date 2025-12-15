@@ -20,7 +20,7 @@
 - [ ] AI assisted transaction categorizing
 - [ ] AI assistated financing structures suggestion and refinement
 - [ ] RAG pipeline to local database that feed AI knowledge
-- [ ] multi select category, and category snpshot on date range data, not on visualized data
+- [ ] multi select category, and enable category filter snapshot on date range data, not on visualized data
 
 ## Architecture & modules
 
