@@ -40,6 +40,9 @@ export function DescriptionEditor({
     reset({ description: value ?? "" }, { keepDirty: false });
   }, [reset, value]);
 
+  const sharedControlClasses =
+    "min-h-[1.75rem] w-full rounded border px-2 text-xs text-slate-700 transition focus:outline-none focus:ring-0 leading-tight";
+
   const onSubmit = handleSubmit(async (data) => {
     setStatus("saving");
     setErrorMessage(null);
@@ -79,7 +82,7 @@ export function DescriptionEditor({
   const readOnlyView = (
     <button
       type="button"
-      className="group flex min-h-[1.75rem] w-full items-center rounded border border-transparent px-2 text-left text-xs text-slate-700 transition hover:border-slate-200 hover:bg-white focus:outline-none"
+      className={`${sharedControlClasses} flex items-center border-transparent bg-transparent text-left text-xs text-slate-700 hover:border-slate-200 hover:bg-white`}
       onClick={() => {
         setIsEditing(true);
         setStatus("idle");
@@ -102,7 +105,7 @@ export function DescriptionEditor({
     <form onSubmit={onSubmit} className="flex w-full flex-col">
       <input
         {...register("description")}
-        className="min-h-[1.75rem] w-full rounded border border-slate-200 bg-white px-2 text-xs text-slate-700 outline-none focus:border-slate-400"
+        className={`${sharedControlClasses} border-slate-200 bg-white`}
         placeholder="Add notes"
         maxLength={DESCRIPTION_MAX_LENGTH}
         disabled={status === "saving"}

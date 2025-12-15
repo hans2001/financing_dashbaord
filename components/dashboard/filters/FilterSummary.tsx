@@ -39,10 +39,10 @@ export function FilterSummary({
   const dateLabel = useMemo(() => formatDateRangeLabel(dateRange), [dateRange]);
 
   return (
-    <div className="flex items-start justify-between gap-4 py-3">
-      <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+    <div className="flex items-center justify-between gap-4 py-3">
+      <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50/80 px-3 py-0.5 text-sm font-semibold text-slate-900 shadow-sm shadow-slate-900/5">
         {dateLabel}
-      </p>
+      </span>
       <div className="flex items-center gap-2">
         <button
           type="button"

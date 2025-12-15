@@ -1,3 +1,5 @@
+import type { Transaction } from "./types";
+
 export const FAMILY_AUTH_HEADER = "x-family-secret";
 export const FAMILY_USER_HEADER = "x-family-user-id";
 export const FAMILY_AUTH_SECRET =
@@ -49,79 +51,144 @@ export const formatBalanceTimestamp = (value?: string | null) => {
   })}`;
 };
 
-export const CATEGORY_BADGES: Record<
-  string,
-  { label: string; bg: string; text: string; border: string }
-> = {
+export type CategoryBadge = {
+  label: string;
+  bg: string;
+  text: string;
+  border: string;
+  pieColor: string;
+};
+
+const CATEGORY_PALETTE: Record<string, CategoryBadge> = {
   tuition: {
     label: "Tuition",
-    bg: "bg-rose-100",
-    text: "text-rose-700",
-    border: "border border-rose-200",
+    bg: "bg-fuchsia-50",
+    text: "text-fuchsia-700",
+    border: "border border-fuchsia-200",
+    pieColor: "#c026d3",
   },
   transportation: {
     label: "Transportation",
-    bg: "bg-orange-100",
+    bg: "bg-orange-50",
     text: "text-orange-700",
     border: "border border-orange-200",
+    pieColor: "#ea580c",
   },
   food: {
     label: "Food",
-    bg: "bg-amber-100",
+    bg: "bg-amber-50",
     text: "text-amber-700",
     border: "border border-amber-200",
+    pieColor: "#d97706",
   },
   rent: {
     label: "Rent",
-    bg: "bg-red-100",
+    bg: "bg-red-50",
     text: "text-red-700",
     border: "border border-red-200",
+    pieColor: "#dc2626",
   },
   internet: {
     label: "Internet",
-    bg: "bg-purple-100",
+    bg: "bg-purple-50",
     text: "text-purple-700",
     border: "border border-purple-200",
+    pieColor: "#7c3aed",
   },
   household: {
     label: "Household",
-    bg: "bg-indigo-100",
+    bg: "bg-indigo-50",
     text: "text-indigo-700",
     border: "border border-indigo-200",
+    pieColor: "#4f46e5",
   },
   income: {
     label: "Income",
-    bg: "bg-sky-100",
-    text: "text-sky-700",
-    border: "border border-sky-200",
+    bg: "bg-emerald-50",
+    text: "text-emerald-700",
+    border: "border border-emerald-200",
+    pieColor: "#15803d",
   },
   business: {
     label: "Business",
-    bg: "bg-emerald-100",
-    text: "text-emerald-700",
-    border: "border border-emerald-200",
+    bg: "bg-teal-50",
+    text: "text-teal-700",
+    border: "border border-teal-200",
+    pieColor: "#0f766e",
   },
   miscellaneous: {
     label: "Miscellaneous",
-    bg: "bg-cyan-100",
+    bg: "bg-cyan-50",
     text: "text-cyan-700",
     border: "border border-cyan-200",
+    pieColor: "#0ea5e9",
   },
   uncategorized: {
     label: "Uncategorized",
-    bg: "bg-slate-100",
-    text: "text-slate-500",
+    bg: "bg-slate-50",
+    text: "text-slate-600",
     border: "border border-slate-200",
+    pieColor: "#94a3b8",
   },
 };
+export const CATEGORY_BADGES = CATEGORY_PALETTE;
 
 export const DEFAULT_CATEGORY = "uncategorized";
 
-export const getCategoryBadge = (categoryPath?: string) => {
-  const baseCategory =
-    categoryPath?.split(" > ")[0]?.trim().toLowerCase() ?? DEFAULT_CATEGORY;
-  return CATEGORY_BADGES[baseCategory] ?? CATEGORY_BADGES[DEFAULT_CATEGORY];
+const DEFAULT_CATEGORY_BADGE = (() => {
+  const badge = CATEGORY_BADGES[DEFAULT_CATEGORY];
+  if (!badge) {
+    throw new Error(`Missing default badge for "${DEFAULT_CATEGORY}"`);
+  }
+  return badge;
+})();
+
+const normalizeCategoryKey = (value?: string) => {
+  return (
+    value?.split(" > ")[0]?.trim().toLowerCase() ?? DEFAULT_CATEGORY
+  );
 };
+
+export const getCategoryBadge = (categoryPath?: string): CategoryBadge => {
+  const baseCategory = normalizeCategoryKey(categoryPath);
+  const badge = CATEGORY_BADGES[baseCategory];
+  if (badge) {
+    return badge;
+  }
+  return DEFAULT_CATEGORY_BADGE;
+};
+
+export const getCategoryPieColor = (categoryPath?: string) =>
+  getCategoryBadge(categoryPath).pieColor;
+
+export type StatusBadge = {
+  label: string;
+  bg: string;
+  text: string;
+  border: string;
+};
+
+type StatusKey = Transaction["status"];
+
+const STATUS_BADGES: Record<StatusKey, StatusBadge> = {
+  pending: {
+    label: "Pending",
+    bg: "bg-amber-50",
+    text: "text-amber-700",
+    border: "border border-amber-200",
+  },
+  posted: {
+    label: "Posted",
+    bg: "bg-emerald-50",
+    text: "text-emerald-700",
+    border: "border border-emerald-200",
+  },
+};
+
+const DEFAULT_STATUS: StatusKey = "posted";
+
+export const getStatusBadge = (status: StatusKey) =>
+  STATUS_BADGES[status] ?? STATUS_BADGES[DEFAULT_STATUS];
 
 export const truncateInline = (value: string, maxLength = 45) => {
   if (!value) {
@@ -184,13 +251,4 @@ export const FLOW_FILTERS = [
 ] as const;
 export type FlowFilterValue = (typeof FLOW_FILTERS)[number]["value"];
 
-export const CATEGORY_PIE_COLORS = [
-  "#0f5ef2",
-  "#7c3aed",
-  "#22c55e",
-  "#eab308",
-  "#f97316",
-  "#ef4444",
-  "#14b8a6",
-];
 export const MAX_CATEGORY_SLICES = 5;

@@ -1,5 +1,9 @@
 import { memo } from "react";
-import { CATEGORY_PIE_COLORS, MAX_CATEGORY_SLICES, formatCurrency } from "./dashboard-utils";
+import {
+  MAX_CATEGORY_SLICES,
+  formatCurrency,
+  getCategoryPieColor,
+} from "./dashboard-utils";
 
 type SummaryPanelProps = {
   activeSpentTotal: number;
@@ -43,13 +47,12 @@ const CategoryPie = ({ categoriesToShow, categoryEmptyMessage }: CategoryPieProp
 
   const segments: PieSegment[] = [];
   let offset = 0;
-  pieCategories.forEach(([label, value], index) => {
+  pieCategories.forEach(([label, value]) => {
     const percent = value / total;
     const start = offset;
     const end = start + percent * 100;
     offset = end;
-    const color =
-      CATEGORY_PIE_COLORS[index % CATEGORY_PIE_COLORS.length] ?? "#0f5ef2";
+    const color = getCategoryPieColor(label);
     segments.push({
       label,
       value,

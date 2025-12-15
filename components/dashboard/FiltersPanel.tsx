@@ -198,7 +198,7 @@ function FiltersPanelComponent({
           </div>
           <button
             type="button"
-            className="rounded-full border border-slate-200 px-3 text-[0.55rem] font-semibold uppercase tracking-[0.3em] text-slate-700 transition hover:border-slate-400 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-full border border-transparent bg-gradient-to-br from-slate-900 to-slate-700 px-3 py-1 text-[0.6rem] font-semibold uppercase tracking-[0.25em] text-white shadow-lg shadow-slate-900/30 transition hover:from-slate-800 hover:to-slate-600 disabled:border-slate-400 disabled:bg-slate-200 disabled:text-slate-500 disabled:shadow-none disabled:cursor-not-allowed"
             onClick={onSync}
             disabled={isSyncing}
           >

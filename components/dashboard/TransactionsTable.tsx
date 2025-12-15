@@ -1,4 +1,9 @@
-import { getCategoryBadge, formatCurrency, truncateInline } from "./dashboard-utils";
+import {
+  getCategoryBadge,
+  getStatusBadge,
+  formatCurrency,
+  truncateInline,
+} from "./dashboard-utils";
 import type { Transaction } from "./types";
 import { DescriptionEditor } from "./DescriptionEditor";
 import { memo } from "react";
@@ -78,7 +83,9 @@ function TransactionsTableComponent({
                   </th>
                   <th className="py-0">Date</th>
                   <th className="py-0">Status</th>
-                  <th className="py-0">Account</th>
+                  <th className="py-0 min-w-[5rem] max-w-[6rem]">
+                    Account
+                  </th>
                   <th className="py-0">Merchant / Name</th>
                   <th className="py-0">Category</th>
                   <th className="py-0 pr-4">Description</th>
@@ -88,6 +95,7 @@ function TransactionsTableComponent({
               <tbody className="text-slate-700">
                 {transactions.map((tx) => {
                   const categoryBadge = getCategoryBadge(tx.categoryPath);
+                  const statusBadge = getStatusBadge(tx.status);
                   return (
                     <tr
                       key={tx.id}
@@ -111,18 +119,14 @@ function TransactionsTableComponent({
                       </td>
                       <td className="min-w-[3.75rem] py-0">
                         <span
-                          className={
-                            tx.pending
-                              ? "rounded-full bg-amber-100 px-1.5 text-[0.55rem] font-semibold uppercase tracking-[0.2em] text-amber-700"
-                              : "rounded-full bg-emerald-100 px-1.5 text-[0.55rem] font-semibold uppercase tracking-[0.2em] text-emerald-700"
-                          }
+                          className={`inline-flex items-center rounded-full px-1.5 py-0 text-[0.5rem] font-semibold uppercase tracking-[0.2em] ${statusBadge.bg} ${statusBadge.text} ${statusBadge.border}`}
                         >
-                          {tx.pending ? "Pending" : "Posted"}
+                          {statusBadge.label}
                         </span>
                       </td>
-                      <td className="min-w-[6rem] py-0 text-[0.65rem] text-slate-600 tracking-[0.02em]">
+                      <td className="py-0 max-w-[6rem] text-[0.65rem] text-slate-600 tracking-[0.02em]">
                         <span className="block truncate" title={tx.accountName}>
-                          {tx.accountName}
+                          {truncateInline(tx.accountName, 18)}
                         </span>
                       </td>
                       <td className="max-w-[16rem]">
@@ -147,12 +151,12 @@ function TransactionsTableComponent({
                       </td>
                       <td className="text-[0.7rem] py-0">
                         <span
-                          className={`inline-flex items-center rounded-full px-1.5 py-0.25 text-[0.5rem] font-semibold uppercase tracking-[0.2em] ${categoryBadge?.bg} ${categoryBadge?.text} ${categoryBadge?.border}`}
+                          className={`inline-flex items-center rounded-full px-1.5 py-0.25 text-[0.5rem] font-semibold uppercase tracking-[0.2em] ${categoryBadge.bg} ${categoryBadge.text} ${categoryBadge.border}`}
                         >
-                          {categoryBadge?.label}
+                          {categoryBadge.label}
                         </span>
                       </td>
-                      <td className="max-w-[10rem] text-[0.65rem] text-slate-500">
+                      <td className="min-w-[10rem] max-w-[10rem] text-[0.65rem] text-slate-500">
                         <div className="flex w-full max-w-full items-center gap-0.5 overflow-x-auto whitespace-nowrap">
                           <DescriptionEditor
                             transactionId={tx.id}
