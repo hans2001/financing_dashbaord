@@ -22,7 +22,6 @@ export async function GET(request: Request) {
       members: members.map((member) => ({
         id: member.id,
         displayName: member.displayName,
-        activeSavedViewId: member.activeSavedViewId,
       })),
     });
   } catch (error) {

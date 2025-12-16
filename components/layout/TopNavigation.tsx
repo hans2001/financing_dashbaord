@@ -13,8 +13,18 @@ type NavigationLink = {
 
 const navigationLinks: NavigationLink[] = [
   { href: "/dashboard", label: "Dashboard", exact: true },
-  { href: "/dashboard/manage", label: "Manage" },
 ];
+
+const navFontFamily =
+  "var(--font-geist-mono), var(--font-geist-sans), 'Space Grotesk', 'Inter', system-ui, sans-serif";
+
+const LogoMark = () => (
+  <span className="flex h-9 w-9 items-center justify-center rounded-2xl border border-primary/30 bg-gradient-to-br from-slate-100 via-primary/20 to-primary/10 shadow-sm shadow-primary/30">
+  <span className="flex h-6 w-6 items-center justify-center rounded-[14px] bg-white text-[0.65rem] leading-none font-semibold uppercase tracking-[0.35em] text-primary">
+      PF
+    </span>
+  </span>
+);
 
 export function TopNavigation() {
   const pathname = usePathname() ?? "/";
@@ -26,12 +36,13 @@ export function TopNavigation() {
           href="/"
           className="flex items-center gap-3 text-sm font-semibold text-slate-900"
         >
-          <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-            PF
-          </span>
+          <LogoMark />
           <span className="text-base leading-tight">Finance Dashboard</span>
         </Link>
-        <nav className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em]">
+        <nav
+          className="flex items-center gap-2 text-[0.7rem] font-semibold uppercase tracking-[0.35em]"
+          style={{ fontFamily: navFontFamily }}
+        >
           {navigationLinks.map((link) => {
             const normalizedPath =
               pathname.endsWith("/") && pathname !== "/"
@@ -51,7 +62,7 @@ export function TopNavigation() {
                 key={link.href}
                 href={link.href}
                 className={cn(
-                  "rounded-full px-3 py-1.5 transition-colors",
+                  "rounded-full px-3 py-1.5 transition-colors text-[0.65rem] tracking-[0.4em]",
                   isActive
                     ? "bg-slate-900/5 text-slate-900"
                     : "text-slate-500 hover:text-slate-900",
@@ -60,9 +71,9 @@ export function TopNavigation() {
               >
                 {link.label}
               </Link>
-            );
-          })}
-        </nav>
+          );
+        })}
+      </nav>
       </div>
     </header>
   );

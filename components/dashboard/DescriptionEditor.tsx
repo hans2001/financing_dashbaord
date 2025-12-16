@@ -94,7 +94,7 @@ export function DescriptionEditor({
           {truncateInline(value)}
         </span>
       ) : (
-        <span className="block w-full truncate italic text-slate-400">
+        <span className="block w-full truncate italic text-slate-300 text-[0.65rem]">
           Add description
         </span>
       )}

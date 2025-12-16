@@ -13,16 +13,60 @@ const CATEGORY_OVERRIDE_RULES: Array<{
   keywords: string[];
   label: string;
 }> = [
-  { keywords: ["nu flywire"], label: "Tuition" },
-  { keywords: ["uber eats"], label: "Food" },
-  { keywords: ["atm", "withdrwl"], label: "Rent" },
-  { keywords: ["siyuan gao"], label: "Internet" },
+  {
+    keywords: [
+      "customized cash",
+      "cash rewards",
+      "interest earned",
+    ],
+    label: "Interests",
+  },
+  { keywords: ["nu flywire", "nyu"], label: "Tuition" },
+  { keywords: ["amazon", "whole foods", "aldi", "TJ Maxx"], label: "Groceries" },
+  {
+    keywords: [
+      "uber eats",
+      "bloomberg ce",
+      "panera bread",
+      "wok a holic",
+      "bindaas",
+      "domino's",
+      "taco bell",
+      "www.potbelly.il",
+      "chipotle",
+      "bb.qchick",
+      "fresh baguette",
+      "potbelly",
+      "pizza h street",
+      "khepra",
+      "duangjai thai",
+      "wasai",
+      "delizique",
+      "rice bar market place",
+    ],
+    label: "Food",
+  },
+  { keywords: ["WITHDRWL MBTA-MALDEN CENTER"], label: "Rent" },
+  { keywords: ["siyuan gao", "comcast"], label: "Internet" },
   { keywords: ["yuqing cui"], label: "Household" },
-  { keywords: ["zelle payment from"], label: "Business" },
-  { keywords: ["zelle payment to"], label: "Miscellaneous" },
-  { keywords: ["uber"], label: "Transportation" },
-  { keywords: ["mbta"], label: "Transportation" },
-  { keywords: ["metro"], label: "Transportation" },
+  { keywords: ["payment from", "transfer from"], label: "Business" },
+  { keywords: ["salary"], label: "Salary" },
+  {
+    keywords: ["transfer to", "payment to", "cashback", "rewards"],
+    label: "Miscellaneous",
+  },
+  { keywords: ["cvs", "injury"], label: "Health" },
+  {
+    keywords: [
+      "uber",
+      "mbta",
+      "metro",
+      "delta air lines",
+      "smartrip",
+      "metro washington dcdc",
+    ],
+    label: "Transportation",
+  },
 ];
 
 export const dropConfSuffix = (value?: string | null) => {
@@ -39,7 +83,9 @@ const normalizeForRules = (value?: string | null) =>
 export const getOverrideCategoryLabel = (
   source: MerchantSource | Pick<Transaction, "name" | "merchantName">,
 ): string | null => {
-  const text = dropConfSuffix(source.merchantName ?? source.name ?? "");
+  const text = dropConfSuffix(
+    [source.merchantName, source.name].filter(Boolean).join(" ").trim(),
+  );
   const normalized = normalizeForRules(text);
 
   for (const rule of CATEGORY_OVERRIDE_RULES) {

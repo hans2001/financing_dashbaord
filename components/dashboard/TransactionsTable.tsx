@@ -117,7 +117,7 @@ function TransactionsTableComponent({
                           </p>
                         )}
                       </td>
-                      <td className="min-w-[3.75rem] py-0">
+                      <td className="min-w-[3.5rem] py-0">
                         <span
                           className={`inline-flex items-center rounded-full px-1.5 py-0 text-[0.5rem] font-semibold uppercase tracking-[0.2em] ${statusBadge.bg} ${statusBadge.text} ${statusBadge.border}`}
                         >

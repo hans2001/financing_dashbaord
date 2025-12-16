@@ -1,6 +1,5 @@
 import { memo } from "react";
 import {
-  MAX_CATEGORY_SLICES,
   formatCurrency,
   getCategoryPieColor,
 } from "./dashboard-utils";
@@ -33,15 +32,18 @@ type CategoryPieProps = {
   categoryEmptyMessage: string;
 };
 
+export const getPieCategories = (
+  categoriesToShow: [string, number][],
+): [string, number][] =>
+  categoriesToShow.map(([label, value]) => [label, value ?? 0]);
+
 const CategoryPie = ({ categoriesToShow, categoryEmptyMessage }: CategoryPieProps) => {
-  const base = categoriesToShow.slice(0, MAX_CATEGORY_SLICES);
-  const overflow = categoriesToShow.slice(MAX_CATEGORY_SLICES);
-  const remainderTotal = overflow.reduce<number>(
-    (sum, [, value]) => sum + value,
-    0,
-  );
-  const pieCategories: [string, number][] =
-    remainderTotal > 0 ? [...base, ["Other", remainderTotal]] : base;
+  if (categoriesToShow.length === 0) {
+    return (
+      <p className="mt-2 text-sm text-slate-500">{categoryEmptyMessage}</p>
+    );
+  }
+  const pieCategories = getPieCategories(categoriesToShow);
   const total =
     pieCategories.reduce<number>((sum, [, value]) => sum + value, 0) || 1;
 
@@ -63,9 +65,7 @@ const CategoryPie = ({ categoriesToShow, categoryEmptyMessage }: CategoryPieProp
     });
   });
 
-  return categoriesToShow.length === 0 ? (
-    <p className="mt-2 text-sm text-slate-500">{categoryEmptyMessage}</p>
-  ) : (
+  return (
     <div className="mt-3 flex flex-col items-center gap-3 text-center">
       <div className="relative h-36 w-36">
         <div
@@ -85,7 +85,7 @@ const CategoryPie = ({ categoriesToShow, categoryEmptyMessage }: CategoryPieProp
           </span>
         </div>
       </div>
-      <div className="flex flex-col items-center gap-1 text-sm text-slate-600 md:flex-row md:flex-wrap md:items-center md:gap-3">
+      <div className="flex flex-col items-center gap-1 text-[0.7rem] text-slate-600 md:flex-row md:flex-wrap md:items-center md:gap-2">
         {segments.map((segment) => (
           <div
             key={segment.label}
@@ -96,9 +96,9 @@ const CategoryPie = ({ categoriesToShow, categoryEmptyMessage }: CategoryPieProp
                 className="h-2.5 w-2.5 rounded-full"
                 style={{ backgroundColor: segment.color }}
               />
-              <span className="text-slate-900">{segment.label}</span>
+              <span className="text-slate-900 text-[0.75rem]">{segment.label}</span>
             </div>
-            <span className="text-xs text-slate-500">
+            <span className="text-[0.6rem] text-slate-500">
               {Math.round(segment.percent * 100)}%
             </span>
           </div>

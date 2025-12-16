@@ -81,10 +81,55 @@ export async function POST(request: Request) {
       const transactions = transactionsResponse.data.transactions ?? [];
       summary.fetched += transactions.length;
 
+      const plaidAccountIds = Array.from(
+        new Set(
+          transactions
+            .map((transaction) => transaction.account_id)
+            .filter(Boolean),
+        ),
+      );
+      const accounts =
+        plaidAccountIds.length > 0
+          ? await prisma.account.findMany({
+              where: {
+                plaidAccountId: {
+                  in: plaidAccountIds,
+                },
+              },
+            })
+          : [];
+      const accountLookup = new Map(accounts.map((account) => [
+        account.plaidAccountId,
+        account,
+      ]));
+
+      const transactionIds = Array.from(
+        new Set(
+          transactions
+            .map((transaction) => transaction.transaction_id)
+            .filter(Boolean),
+        ),
+      );
+      const existingTransactions =
+        transactionIds.length > 0
+          ? await prisma.transaction.findMany({
+              where: {
+                plaidTransactionId: {
+                  in: transactionIds,
+                },
+              },
+              select: {
+                plaidTransactionId: true,
+              },
+            })
+          : [];
+      const existingTransactionIds = new Set(
+        existingTransactions.map((tx) => tx.plaidTransactionId),
+      );
+
       for (const tx of transactions) {
-        const account = await prisma.account.findUnique({
-          where: { plaidAccountId: tx.account_id },
-        });
+        const accountId = tx.account_id ?? "";
+        const account = accountLookup.get(accountId);
 
         if (!account) {
           console.warn(
@@ -94,10 +139,12 @@ export async function POST(request: Request) {
           continue;
         }
 
-        const alreadyExists = await prisma.transaction.findUnique({
-          where: { plaidTransactionId: tx.transaction_id },
-        });
-        if (alreadyExists) {
+        const transactionId = tx.transaction_id;
+        if (!transactionId) {
+          console.warn("Skipping transaction with missing id", tx);
+          continue;
+        }
+        if (existingTransactionIds.has(transactionId)) {
           summary.updated += 1;
         } else {
           summary.inserted += 1;

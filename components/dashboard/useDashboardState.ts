@@ -1,5 +1,5 @@
 import type { Dispatch, SetStateAction } from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import type { Account, Transaction } from "./types";
@@ -7,11 +7,6 @@ import type {
   FlowFilterValue,
   PageSizeOptionValue,
   SortOptionValue,
-} from "./dashboard-utils";
-import {
-  FLOW_FILTERS,
-  PAGE_SIZE_OPTIONS,
-  SORT_OPTIONS,
 } from "./dashboard-utils";
 import { useSyncControls } from "./hooks/useSyncControls";
 import { useAccountsData } from "./hooks/useAccountsData";
@@ -22,12 +17,6 @@ import {
 import { useSummaryData } from "./hooks/useSummaryData";
 import { useSelectionState } from "./hooks/useSelectionState";
 import { useDashboardFilters } from "./hooks/useDashboardFilters";
-import { useSavedViewsState } from "./hooks/useSavedViewsState";
-import type {
-  SavedViewMetadata,
-  SerializedSavedView,
-} from "./types/workspace";
-import { isIsoDateString } from "./forms/dashboardFiltersForm";
 
 type DashboardState = {
   accounts: Account[];
@@ -67,15 +56,6 @@ type DashboardState = {
   isSyncing: boolean;
   syncMessage: string | null;
   showAccountsPanel: boolean;
-  savedViews: SerializedSavedView[];
-  activeSavedViewId: string | null;
-  isSavedViewsLoading: boolean;
-  savedViewsError: string | null;
-  isActivatingView: boolean;
-  isSavingView: boolean;
-  activateError: string | null;
-  saveViewError: string | null;
-  currentViewMetadata: SavedViewMetadata;
   areFiltersCollapsed: boolean;
 };
 
@@ -96,11 +76,6 @@ type DashboardActions = {
   setCategoryFilter: (value: string) => void;
   handleSync: () => Promise<void>;
   setShowAccountsPanel: Dispatch<SetStateAction<boolean>>;
-  handleSavedViewSelect: (viewId: string) => Promise<void>;
-  handleSaveCurrentView: (
-    name: string,
-    options?: { isPinned?: boolean; viewId?: string | null },
-  ) => Promise<void>;
   setAreFiltersCollapsed: Dispatch<SetStateAction<boolean>>;
 };
 
@@ -108,19 +83,6 @@ export function useDashboardState(): DashboardState & DashboardActions {
   const { refreshKey, handleSync, isSyncing, syncMessage } = useSyncControls();
   const [showAccountsPanel, setShowAccountsPanel] = useState(false);
   const queryClient = useQueryClient();
-  const {
-    savedViews,
-    activeSavedViewId,
-    isSavedViewsLoading,
-    savedViewsError,
-    isActivatingView,
-    activateError,
-    activateView,
-    isSavingView,
-    saveView,
-    saveViewError,
-  } = useSavedViewsState({ refreshKey });
-  const appliedSavedViewIdRef = useRef<string | null>(null);
   const [areFiltersCollapsed, setAreFiltersCollapsed] = useState(true);
   const {
     selectedAccounts,
@@ -192,14 +154,6 @@ export function useDashboardState(): DashboardState & DashboardActions {
     selectionCategoryTotals,
   } = useSelectionState(transactions);
 
-  const setSelectedAccountsFromView = useCallback(
-    (value: string[]) => {
-      onClearSelection();
-      setSelectedAccountsFilter(value);
-    },
-    [onClearSelection, setSelectedAccountsFilter],
-  );
-
   const handleSelectedAccountsChange = useCallback(
     (value: string[]) => {
       onClearSelection();
@@ -247,129 +201,6 @@ export function useDashboardState(): DashboardState & DashboardActions {
     [onClearSelection, setCategoryFilterFilter],
   );
 
-  const applySavedViewMetadata = useCallback(
-    (view: SerializedSavedView) => {
-      const metadata = view.metadata ?? null;
-      const normalizedAccounts = Array.isArray(metadata?.selectedAccountIds)
-        ? metadata.selectedAccountIds.filter(Boolean)
-        : [];
-      if (normalizedAccounts.length > 0) {
-        setSelectedAccountsFromView(normalizedAccounts);
-      } else {
-        setSelectedAccountsFromView(["all"]);
-      }
-
-      if (
-        metadata?.dateRange?.start &&
-        metadata.dateRange?.end &&
-        isIsoDateString(metadata.dateRange.start) &&
-        isIsoDateString(metadata.dateRange.end)
-      ) {
-        setDateRange({
-          start: metadata.dateRange.start,
-          end: metadata.dateRange.end,
-        });
-      }
-
-      if (
-        metadata?.pageSize !== undefined &&
-        metadata?.pageSize !== null &&
-        PAGE_SIZE_OPTIONS.some((option) => option.value === metadata.pageSize)
-      ) {
-        setPageSize(metadata.pageSize as PageSizeOptionValue);
-      }
-
-      const flowValue = metadata?.flowFilter;
-      if (
-        typeof flowValue === "string" &&
-        FLOW_FILTERS.some((option) => option.value === flowValue)
-      ) {
-        setFlowFilter(flowValue as FlowFilterValue);
-      }
-
-      const categoryValue = metadata?.categoryFilter;
-      if (typeof categoryValue === "string") {
-        setCategoryFilter(categoryValue);
-      }
-
-      const sortValue = metadata?.sortOption;
-      if (
-        typeof sortValue === "string" &&
-        SORT_OPTIONS.some((option) => option.value === sortValue)
-      ) {
-        setSortOption(sortValue as SortOptionValue);
-      }
-
-      if (typeof metadata?.filtersCollapsed === "boolean") {
-        setAreFiltersCollapsed(metadata.filtersCollapsed);
-      }
-    },
-    [
-      setAreFiltersCollapsed,
-      setCategoryFilter,
-      setDateRange,
-      setFlowFilter,
-      setPageSize,
-      setSelectedAccountsFromView,
-      setSortOption,
-    ],
-  );
-
-  const currentViewMetadata = useMemo<SavedViewMetadata>(() => {
-    const selectedAccountIds = selectedAccounts.filter(
-      (id) => Boolean(id) && id !== "all",
-    );
-    const dateRangeValue =
-      hasDateRange &&
-      isIsoDateString(dateRange.start) &&
-      isIsoDateString(dateRange.end)
-        ? { start: dateRange.start, end: dateRange.end }
-        : null;
-    return {
-      selectedAccountIds,
-      dateRange: dateRangeValue,
-      flowFilter,
-      categoryFilter,
-      sortOption,
-      pageSize,
-      filtersCollapsed: areFiltersCollapsed,
-    };
-  }, [
-    selectedAccounts,
-    hasDateRange,
-    dateRange.start,
-    dateRange.end,
-    flowFilter,
-    categoryFilter,
-    sortOption,
-    pageSize,
-    areFiltersCollapsed,
-  ]);
-
-  const handleSavedViewSelect = useCallback(
-    async (viewId: string) => {
-      appliedSavedViewIdRef.current = null;
-      await activateView(viewId);
-    },
-    [activateView],
-  );
-
-  const handleSaveCurrentView = useCallback(
-    async (
-      name: string,
-      options?: { isPinned?: boolean; viewId?: string | null },
-    ) => {
-      await saveView({
-        id: options?.viewId ?? undefined,
-        name,
-        metadata: currentViewMetadata,
-        columnConfig: null,
-        isPinned: Boolean(options?.isPinned),
-      });
-    },
-    [currentViewMetadata, saveView],
-  );
-
   const handleDescriptionSaved = useCallback(
     (transactionId: string, description: string | null) => {
       queryClient.setQueryData<TransactionsQueryResult | undefined>(
@@ -391,23 +222,6 @@ export function useDashboardState(): DashboardState & DashboardActions {
     },
     [queryClient, transactionsQueryKey],
   );
-
-  // We intentionally sync view metadata to filter state here after queries load.
-  /* eslint-disable react-hooks/set-state-in-effect */
-  useEffect(() => {
-    const targetView = savedViews.find(
-      (view: SerializedSavedView) => view.id === activeSavedViewId,
-    );
-    if (!targetView) {
-      return;
-    }
-    if (appliedSavedViewIdRef.current === targetView.id) {
-      return;
-    }
-    applySavedViewMetadata(targetView);
-    appliedSavedViewIdRef.current = targetView.id;
-  }, [activeSavedViewId, applySavedViewMetadata, savedViews]);
-  /* eslint-enable react-hooks/set-state-in-effect */
 
   const totalPages =
     totalTransactions === 0 || isShowingAllRows
@@ -546,15 +360,6 @@ export function useDashboardState(): DashboardState & DashboardActions {
     activeLargestExpense,
     activeLargestIncome,
     showAccountsPanel,
-    savedViews,
-    activeSavedViewId,
-    isSavedViewsLoading,
-    savedViewsError,
-    isActivatingView,
-    isSavingView,
-    activateError,
-    saveViewError,
-    currentViewMetadata,
     areFiltersCollapsed,
     isSyncing,
     syncMessage,
@@ -574,8 +379,6 @@ export function useDashboardState(): DashboardState & DashboardActions {
     setCategoryFilter,
     handleSync,
     setShowAccountsPanel,
-    handleSavedViewSelect,
-    handleSaveCurrentView,
     setAreFiltersCollapsed,
   };
 }

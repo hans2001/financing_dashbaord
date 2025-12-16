@@ -3,14 +3,60 @@ import { useMemo } from "react";
 
 import { FAMILY_AUTH_HEADERS } from "../dashboard-utils";
 import type { Transaction } from "../types";
-import type {
-  FlowFilterValue,
-  SortOptionValue,
-} from "../dashboard-utils";
+import type { FlowFilterValue, SortOptionValue } from "../dashboard-utils";
 
 export type TransactionsQueryResult = {
   transactions: Transaction[];
   total: number;
+};
+
+export const getNormalizedAccountSelection = (selectedAccounts: string[]) => {
+  const filteredIds = selectedAccounts.filter(Boolean);
+  if (filteredIds.includes("all")) {
+    return [];
+  }
+  return Array.from(new Set(filteredIds));
+};
+
+type BuildTransactionsSearchParamsArgs = {
+  selectedAccounts: string[];
+  dateRange: { start: string; end: string };
+  pageSize: number | "all";
+  currentPage: number;
+  sortOption: SortOptionValue;
+  flowFilter: FlowFilterValue;
+  categoryFilter: string;
+};
+
+export const buildTransactionsSearchParams = ({
+  selectedAccounts,
+  dateRange,
+  pageSize,
+  currentPage,
+  sortOption,
+  flowFilter,
+  categoryFilter,
+}: BuildTransactionsSearchParamsArgs) => {
+  const params = new URLSearchParams();
+  if (pageSize === "all") {
+    params.set("limit", "all");
+    params.set("offset", "0");
+  } else {
+    params.set("limit", pageSize.toString());
+    params.set("offset", (currentPage * pageSize).toString());
+  }
+  const normalizedAccountIds = getNormalizedAccountSelection(selectedAccounts);
+  normalizedAccountIds.forEach((accountId) => {
+    params.append("accountId", accountId);
+  });
+  params.set("startDate", dateRange.start);
+  params.set("endDate", dateRange.end);
+  params.set("sort", sortOption);
+  params.set("flow", flowFilter);
+  if (categoryFilter !== "all") {
+    params.set("category", categoryFilter);
+  }
+  return params;
 };
 
 type TransactionsArgs = {
@@ -41,13 +87,10 @@ export function useTransactionsData({
   refreshKey,
   hasDateRange,
 }: TransactionsArgs) {
-  const normalizedAccountIds = useMemo(() => {
-    const filteredIds = selectedAccounts.filter(Boolean);
-    if (filteredIds.includes("all")) {
-      return [];
-    }
-    return Array.from(new Set(filteredIds));
-  }, [selectedAccounts]);
+  const normalizedAccountIds = useMemo(
+    () => getNormalizedAccountSelection(selectedAccounts),
+    [selectedAccounts],
+  );
 
   const accountFilterKey =
     normalizedAccountIds.length > 0 ? normalizedAccountIds.join(",") : "all";
@@ -83,24 +126,15 @@ export function useTransactionsData({
     enabled: hasDateRange,
     placeholderData: keepPreviousData,
     queryFn: async () => {
-      const params = new URLSearchParams();
-      if (pageSize === "all") {
-        params.set("limit", "all");
-        params.set("offset", "0");
-      } else {
-        params.set("limit", pageSize.toString());
-        params.set("offset", (currentPage * pageSize).toString());
-      }
-      for (const accountId of normalizedAccountIds) {
-        params.append("accountId", accountId);
-      }
-      params.set("startDate", dateRange.start);
-      params.set("endDate", dateRange.end);
-      params.set("sort", sortOption);
-      params.set("flow", flowFilter);
-      if (categoryFilter !== "all") {
-        params.set("category", categoryFilter);
-      }
+      const params = buildTransactionsSearchParams({
+        selectedAccounts,
+        dateRange,
+        pageSize,
+        currentPage,
+        sortOption,
+        flowFilter,
+        categoryFilter,
+      });
 
       const response = await fetch(`/api/transactions?${params.toString()}`, {
         headers: FAMILY_AUTH_HEADERS,

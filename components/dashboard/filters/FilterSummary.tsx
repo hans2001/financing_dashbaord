@@ -54,7 +54,7 @@ export function FilterSummary({
         </button>
         <button
           type="button"
-          className="text-[0.55rem] font-semibold uppercase tracking-[0.35em] text-slate-500 transition hover:text-slate-800"
+          className="text-[0.55rem] font-semibold uppercase tracking-[0.35em] text-slate-700 transition hover:text-slate-900"
           onClick={onToggleCollapsed}
           aria-controls={detailTrayId}
           aria-expanded={!isCollapsed}

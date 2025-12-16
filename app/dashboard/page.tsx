@@ -46,6 +46,7 @@ export default function DashboardPage() {
     setDateRange,
     setPageSize,
     setSortOption,
+    setFlowFilter,
     setCategoryFilter,
     onPreviousPage,
     onFirstPage,
@@ -60,15 +61,18 @@ export default function DashboardPage() {
     setShowAccountsPanel,
     areFiltersCollapsed,
     setAreFiltersCollapsed,
+    selectedAccounts,
+    setSelectedAccounts,
     dateRange,
     pageSize,
     sortOption,
+    flowFilter,
     categoryFilter,
     categoryOptions,
   } = useDashboardState();
 
   const renderOverview = (
-    <section className="flex flex-col gap-3 xl:flex-row xl:items-stretch">
+    <section className="flex flex-col gap-2 xl:flex-row xl:items-stretch">
       <div className="flex min-w-0 flex-[0.85] flex-col gap-2 h-full">
         <FiltersPanel
           dateRange={dateRange}
@@ -80,12 +84,17 @@ export default function DashboardPage() {
           categoryOptions={categoryOptions}
           sortOption={sortOption}
           onSortOptionChange={setSortOption}
+          flowFilter={flowFilter}
+          onFlowFilterChange={setFlowFilter}
           isCollapsed={areFiltersCollapsed}
           onToggleCollapsed={() =>
             setAreFiltersCollapsed((previous) => !previous)
           }
           isSyncing={isSyncing}
           onSync={handleSync}
+          accounts={accounts}
+          selectedAccounts={selectedAccounts}
+          onSelectedAccountsChange={setSelectedAccounts}
         />
         <div className="flex flex-1 flex-col gap-0 rounded-xl border border-slate-200 bg-white p-2 shadow-sm shadow-slate-900/5">
           <TransactionsTable
@@ -116,7 +125,7 @@ export default function DashboardPage() {
 
       </div>
 
-      <div className="flex min-w-0 flex-[0.15] flex-col gap-3 xl:min-w-[280px] xl:h-full">
+      <div className="flex min-w-0 flex-[0.15] flex-col gap-2 xl:min-w-[280px] xl:h-full">
         <Suspense
           fallback={
         <div className="rounded-lg border border-slate-200 bg-white p-6 text-center text-sm text-slate-500 shadow-sm shadow-slate-900/5">
@@ -153,7 +162,7 @@ export default function DashboardPage() {
 
   return (
     <main className="px-4 pt-4 pb-10">
-      <div className="mx-auto flex max-w-[1400px] flex-col gap-4">
+      <div className="mx-auto flex max-w-[1400px] flex-col gap-3">
         {renderOverview}
       </div>
     </main>

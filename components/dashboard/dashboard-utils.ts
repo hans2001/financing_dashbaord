@@ -81,6 +81,13 @@ const CATEGORY_PALETTE: Record<string, CategoryBadge> = {
     border: "border border-amber-200",
     pieColor: "#d97706",
   },
+  groceries: {
+    label: "Groceries",
+    bg: "bg-lime-50",
+    text: "text-lime-700",
+    border: "border border-lime-200",
+    pieColor: "#65a30d",
+  },
   rent: {
     label: "Rent",
     bg: "bg-red-50",
@@ -102,12 +109,19 @@ const CATEGORY_PALETTE: Record<string, CategoryBadge> = {
     border: "border border-indigo-200",
     pieColor: "#4f46e5",
   },
-  income: {
-    label: "Income",
+  interests: {
+    label: "Interests",
     bg: "bg-emerald-50",
     text: "text-emerald-700",
     border: "border border-emerald-200",
     pieColor: "#15803d",
+  },
+  salary: {
+    label: "Salary",
+    bg: "bg-pink-50",
+    text: "text-pink-700",
+    border: "border border-pink-200",
+    pieColor: "#be185d",
   },
   business: {
     label: "Business",
@@ -115,6 +129,13 @@ const CATEGORY_PALETTE: Record<string, CategoryBadge> = {
     text: "text-teal-700",
     border: "border border-teal-200",
     pieColor: "#0f766e",
+  },
+  health: {
+    label: "Health",
+    bg: "bg-sky-50",
+    text: "text-sky-700",
+    border: "border border-sky-200",
+    pieColor: "#0284c7",
   },
   miscellaneous: {
     label: "Miscellaneous",
@@ -219,7 +240,6 @@ export const PAGE_SIZE_OPTIONS = [
   { value: 100, label: "100 / page" },
   { value: 250, label: "250 / page" },
   { value: 500, label: "500 / page" },
-  { value: 1000, label: "1000 / page" },
   { value: "all", label: "Show all results" },
 ] as const;
 export type PageSizeOptionValue =
@@ -250,5 +270,9 @@ export const FLOW_FILTERS = [
   { value: "inflow", label: "Income only" },
 ] as const;
 export type FlowFilterValue = (typeof FLOW_FILTERS)[number]["value"];
+
+export const DEFAULT_FLOW_FILTER = (
+  FLOW_FILTERS[0]?.value ?? "all"
+) as FlowFilterValue;
 
 export const MAX_CATEGORY_SLICES = 5;

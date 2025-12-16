@@ -4,7 +4,6 @@
 
 - [x] Implement a sort-by dropdown that lets users reorder transactions by date, amount, or merchant name while respecting the current filters.
 - [x] Add authentication that ensures only family members can access the dashboard.
-- [ ] Pre-register Yuki and Hans accounts with proper roles so they can sign in without extra onboarding.
 - [x] Filter to show spending only or inflow only for the transaction table.
 - [ ] Allow manual CRUD of supplemental transactions (e.g., attach to new accounts so the dashboard can track family assets overseas).
 - [ ] Add a monthly trend line chart (date → spent) so momentum can be tracked without exporting data.
@@ -17,9 +16,6 @@
 - [x] Introduce request throttling or caching on `/api/transactions` if the dashboard ends up exposed to larger traffic to avoid overloading Postgres.
 - [x] Improve page navigation UX and make the filter text lower-contrast / smaller so the controls stay subtle.
 - [x] Add a category filter to the transactions table controls so users can narrow rows to any normalized category.
-- [ ] AI assisted transaction categorizing
-- [ ] AI assistated financing structures suggestion and refinement
-- [ ] RAG pipeline to local database that feed AI knowledge
 - [ ] multi select category, and enable category filter snapshot on date range data, not on visualized data
 
 ## Architecture & modules
@@ -32,11 +28,12 @@
 - [x] Introduce a data-fetching helper such as React Query or SWR for accounts, transactions, and summary calls to standardize caching, retries, and background refresh.
 - [x] Pair `react-hook-form` with Zod schemas for filters and description editing so validation rules, defaults, and types stay in sync.
 - [ ] Expand component/API test coverage using React Testing Library plus supertest/next-test-api-route-handler to cover the new modules and locked-down APIs.
+- [ ] Record the dashboard refactor proposal (`refactor-dashboard-table-virtualization`) in `openspec/changes` before landing additional code so the new virtualization/filters work stays documented per the project rule.
+- [ ] Schedule the SavedView model/`activeSavedViewId` column removal in `prisma/schema.prisma` for the next migration so the schema matches the pared-down dashboard capabilities.
 
 ## Platform & automation
 
 - [ ] Layer on lightweight budgeting goals (per-category and household) that highlight spend vs. target so overages stand out immediately.
-- [x] Introduce shared saved views/workspaces — including the new `/dashboard/manage` workspace screen — so Hans and Yuki can pin account selections, filters, and column presets before returning to the main dashboard.
 - [ ] Provide configurable alerts (email/push/webhooks) for suspicious spikes, large transfers, or low balances to help catch issues without babysitting the dashboard.
 - [ ] Deploy the database and dashboard website with automated pipelines so the production stack mirrors local QA/CI environments.
 
@@ -50,6 +47,7 @@
 - [ ] Defer non-critical analytics/components with `useDeferredValue`/`useTransition` hooks so filtering stays responsive.
 - [ ] Profile expensive hooks like `useDashboardState`/`useSelectionState` and split responsibilities so state updates stay localized.
 - [ ] Aggregate summary totals/counts/categories inside the database and reuse a cached currency formatter before revisiting table virtualization so the memory/performance profile stays stable.
+- [ ] Reduce Plaid API usage by tracking `total_transactions`/`request_id` and only fetching additional batches when more data is needed so each `/api/transactions/sync` run hits Plaid the minimum number of times.
 
 ### Timeline / readiness
 
@@ -59,4 +57,9 @@
 
 ## Current components to revisit
 
-- [ ] Review `components/dashboard/TransactionsTable.tsx`, `components/dashboard/filters/FilterSummary.tsx`, `app/page.tsx`, `components/connect/PlaidConnectPanel.tsx`, and `components/dashboard/ManageWorkspace.tsx` so any remaining polish, tests, or TODOs get captured before the next sprint.
+- [ ] Review `components/dashboard/TransactionsTable.tsx`, `components/dashboard/filters/FilterSummary.tsx`, `app/page.tsx`, and `components/connect/PlaidConnectPanel.tsx` so any remaining polish, tests, or TODOs get captured before the next sprint.
+
+## Process & documentation
+
+- [ ] Document the planned dashboard module refactor in `openspec/changes/<change-id>` before touching `app/dashboard/page.tsx`, keeping the normed proposal/spec/tasks trio aligned with the new workflow.
+- [ ] Capture any additional pre-implementation research (shared hooks, UI primitives, testing gaps) referenced in the proposal so the follow-up work stays traceable.

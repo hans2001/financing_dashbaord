@@ -1,10 +1,16 @@
 import {
+  DEFAULT_FLOW_FILTER,
   DEFAULT_PAGE_SIZE_OPTION,
+  FLOW_FILTERS,
   PAGE_SIZE_OPTIONS,
   DEFAULT_SORT_OPTION,
   SORT_OPTIONS,
 } from "../dashboard-utils";
-import type { PageSizeOptionValue, SortOptionValue } from "../dashboard-utils";
+import type {
+  FlowFilterValue,
+  PageSizeOptionValue,
+  SortOptionValue,
+} from "../dashboard-utils";
 
 type FilterChipsProps = {
   categoryFilter: string;
@@ -13,6 +19,8 @@ type FilterChipsProps = {
   handleSortChange: (value: SortOptionValue) => void;
   pageSize: PageSizeOptionValue;
   handlePageSizeChange: (value: PageSizeOptionValue) => void;
+  flowFilter: FlowFilterValue;
+  handleFlowFilterChange: (value: FlowFilterValue) => void;
   defaultCategories?: string[];
 };
 
@@ -29,6 +37,8 @@ export function FilterChips({
   handleSortChange,
   pageSize,
   handlePageSizeChange,
+  flowFilter,
+  handleFlowFilterChange,
   defaultCategories = [],
 }: FilterChipsProps) {
   const chips: FilterChip[] = [];
@@ -69,6 +79,15 @@ export function FilterChips({
       key: "pageSize",
       label: `Rows: ${pageSizeOption.label}`,
       onRemove: () => handlePageSizeChange(DEFAULT_PAGE_SIZE_OPTION),
+    });
+  }
+
+  const flowOption = FLOW_FILTERS.find((option) => option.value === flowFilter);
+  if (flowFilter !== DEFAULT_FLOW_FILTER && flowOption) {
+    chips.push({
+      key: "flow",
+      label: `Flow: ${flowOption.label}`,
+      onRemove: () => handleFlowFilterChange(DEFAULT_FLOW_FILTER),
     });
   }
 

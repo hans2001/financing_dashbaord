@@ -20,12 +20,6 @@ import { POST as createLinkTokenPOST } from "@/app/api/plaid/create-link-token/r
 import { POST as exchangePublicTokenPOST } from "@/app/api/plaid/exchange-public-token/route";
 import { POST as plaidWebhookPOST } from "@/app/api/plaid/webhook/route";
 import { GET as familyMembersGET, POST as familyMembersPOST } from "@/app/api/family-members/route";
-import {
-  GET as workspaceViewsGET,
-  POST as workspaceViewsPOST,
-} from "@/app/api/workspaces/views/route";
-import { DELETE as workspaceViewDelete } from "@/app/api/workspaces/views/[viewId]/route";
-import { POST as workspaceViewActivate } from "@/app/api/workspaces/views/[viewId]/activate/route";
 
 vi.mock("@/lib/prisma", () => ({
   prisma: prismaMock,
@@ -265,7 +259,7 @@ describe("transactions summary", () => {
       ])
       .mockResolvedValueOnce([
         {
-          normalizedCategory: "Income",
+          normalizedCategory: "Interests",
           _sum: { amount: new Prisma.Decimal("150") },
         },
       ]);
@@ -288,7 +282,7 @@ describe("transactions summary", () => {
         Uncategorized: 5,
       },
       incomeCategoryTotals: {
-        Income: 150,
+        Interests: 150,
       },
     });
   });
@@ -417,15 +411,15 @@ describe("transactions sync", () => {
       data: { transactions: plaidTransactions },
     });
 
-    prismaMock.account.findUnique.mockResolvedValue({
-      id: "account-a",
-    });
-
-    prismaMock.transaction.findUnique
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce({
-        id: "existing",
-      });
+    prismaMock.account.findMany.mockResolvedValue([
+      {
+        id: "account-a",
+        plaidAccountId: "account-a",
+      },
+    ]);
+    prismaMock.transaction.findMany.mockResolvedValue([
+      { plaidTransactionId: "tx-2" },
+    ]);
 
     const response = await transactionsSyncPOST(
       new Request("http://localhost/api/transactions/sync", {
@@ -472,10 +466,13 @@ describe("transactions sync", () => {
       data: { transactions: plaidTransactions },
     });
 
-    prismaMock.account.findUnique.mockResolvedValue({
-      id: "account-a",
-    });
-    prismaMock.transaction.findUnique.mockResolvedValue(null);
+    prismaMock.account.findMany.mockResolvedValue([
+      {
+        id: "account-a",
+        plaidAccountId: "account-a",
+      },
+    ]);
+    prismaMock.transaction.findMany.mockResolvedValue([]);
 
     const response = await transactionsSyncPOST(
       new Request("http://localhost/api/transactions/sync", {
@@ -635,12 +632,10 @@ describe("family members endpoint", () => {
       {
         id: "demo-user",
         displayName: "Family",
-        activeSavedViewId: null,
       },
       {
         id: "hans",
         displayName: "Hans",
-        activeSavedViewId: "view-1",
       },
     ]);
 
@@ -651,8 +646,8 @@ describe("family members endpoint", () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
       members: [
-        { id: "demo-user", displayName: "Family", activeSavedViewId: null },
-        { id: "hans", displayName: "Hans", activeSavedViewId: "view-1" },
+        { id: "demo-user", displayName: "Family" },
+        { id: "hans", displayName: "Hans" },
       ],
     });
   });
@@ -681,137 +676,5 @@ describe("family members endpoint", () => {
         create: { id: "yuki", displayName: "Yuki" },
       }),
     );
-  });
-});
-
-describe("saved views endpoint", () => {
-  it("lists the saved views for a user", async () => {
-    const now = new Date("2025-01-01T00:00:00Z");
-    prismaMock.user.upsert.mockResolvedValue({
-      id: "demo-user",
-      activeSavedViewId: "personal-1",
-    });
-    prismaMock.savedView.findMany.mockResolvedValue([
-      {
-        id: "personal-1",
-        name: "Personal view",
-        userId: "demo-user",
-        slug: null,
-        isFamilyView: false,
-        isPinned: true,
-        metadata: { selectedAccountIds: ["account-1"] },
-        columnConfig: null,
-        createdAt: now,
-        updatedAt: now,
-      },
-    ]);
-
-    const response = await workspaceViewsGET(
-      new Request("http://localhost/api/workspaces/views?userId=demo-user"),
-    );
-
-    expect(response.status).toBe(200);
-    const payload = await response.json();
-    expect(payload.savedViews[0].id).toBe("personal-1");
-    expect(payload.activeSavedViewId).toBe("personal-1");
-  });
-
-  it("creates a saved view", async () => {
-    const now = new Date("2025-01-02T00:00:00Z");
-    prismaMock.user.upsert.mockResolvedValue({
-      id: "demo-user",
-      activeSavedViewId: null,
-    });
-    prismaMock.savedView.create.mockResolvedValue({
-      id: "view-123",
-      name: "Hans view",
-      userId: "demo-user",
-      slug: null,
-      isFamilyView: false,
-      isPinned: false,
-      metadata: { selectedAccountIds: ["account-2"] },
-      columnConfig: null,
-      createdAt: now,
-      updatedAt: now,
-    });
-
-    const response = await workspaceViewsPOST(
-      new Request("http://localhost/api/workspaces/views", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: "Hans view",
-          metadata: { selectedAccountIds: ["account-2"] },
-        }),
-      }),
-    );
-
-    expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({
-      view: expect.objectContaining({
-        id: "view-123",
-        name: "Hans view",
-      }),
-    });
-    expect(prismaMock.savedView.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
-          name: "Hans view",
-          userId: "demo-user",
-          metadata: { selectedAccountIds: ["account-2"] },
-        }),
-      }),
-    );
-  });
-
-  it("deletes a personal view", async () => {
-    prismaMock.savedView.findUnique.mockResolvedValue({
-      id: "personal-2",
-      userId: "demo-user",
-      isFamilyView: false,
-    });
-    prismaMock.user.updateMany.mockResolvedValue({ count: 0 });
-
-    const response = await workspaceViewDelete(
-      new Request(
-        "http://localhost/api/workspaces/views/personal-2?userId=demo-user",
-        { method: "DELETE" },
-      ),
-      { params: { viewId: "personal-2" } },
-    );
-
-    expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ deletedId: "personal-2" });
-    expect(prismaMock.savedView.delete).toHaveBeenCalledWith({
-      where: { id: "personal-2" },
-    });
-  });
-
-  it("activates a saved view", async () => {
-    prismaMock.savedView.findUnique.mockResolvedValue({
-      id: "personal-3",
-      userId: "demo-user",
-      isFamilyView: false,
-    });
-    prismaMock.user.update.mockResolvedValue({ id: "demo-user" });
-
-    const response = await workspaceViewActivate(
-      new Request(
-        "http://localhost/api/workspaces/views/personal-3/activate?userId=demo-user",
-        {
-          method: "POST",
-        },
-      ),
-      { params: { viewId: "personal-3" } },
-    );
-
-    expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({
-      activeSavedViewId: "personal-3",
-    });
-    expect(prismaMock.user.update).toHaveBeenCalledWith({
-      where: { id: "demo-user" },
-      data: { activeSavedViewId: "personal-3" },
-    });
   });
 });

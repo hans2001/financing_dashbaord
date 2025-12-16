@@ -4,14 +4,22 @@ import { memo, useEffect, useId, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import * as Collapsible from "@radix-ui/react-collapsible";
 
+import type { Account } from "./types";
 import { FilterChips } from "./filters/FilterChips";
 import { FilterSummary } from "./filters/FilterSummary";
 import { FilterTray } from "./filters/FilterTray";
+import { FlowFilterControls } from "./filters/FlowFilterControls";
+import { AccountFilterSelect } from "./filters/AccountFilterSelect";
 import {
+  DEFAULT_FLOW_FILTER,
   DEFAULT_PAGE_SIZE_OPTION,
   DEFAULT_SORT_OPTION,
 } from "./dashboard-utils";
-import type { PageSizeOptionValue, SortOptionValue } from "./dashboard-utils";
+import type {
+  FlowFilterValue,
+  PageSizeOptionValue,
+  SortOptionValue,
+} from "./dashboard-utils";
 import {
   dashboardFiltersResolver,
   DashboardFiltersFormValues,
@@ -28,10 +36,15 @@ type FiltersPanelProps = {
   categoryOptions: string[];
   sortOption: SortOptionValue;
   onSortOptionChange: (value: SortOptionValue) => void;
+  flowFilter: FlowFilterValue;
+  onFlowFilterChange: (value: FlowFilterValue) => void;
   isCollapsed: boolean;
   onToggleCollapsed: () => void;
   isSyncing: boolean;
   onSync: () => void;
+  accounts: Account[];
+  selectedAccounts: string[];
+  onSelectedAccountsChange: (value: string[]) => void;
 };
 
 function FiltersPanelComponent({
@@ -48,6 +61,11 @@ function FiltersPanelComponent({
   onToggleCollapsed,
   isSyncing,
   onSync,
+  accounts,
+  selectedAccounts,
+  onSelectedAccountsChange,
+  flowFilter,
+  onFlowFilterChange,
 }: FiltersPanelProps) {
   const {
     control,
@@ -149,17 +167,28 @@ function FiltersPanelComponent({
     }
   };
 
+  const handleFlowFilterChange = (nextValue: FlowFilterValue) => {
+    if (nextValue !== flowFilter) {
+      onFlowFilterChange(nextValue);
+    }
+  };
+
   const hasCategoryFilter =
     Boolean(categoryFilter && categoryFilter !== "all");
   const hasSortFilter = sortOption !== DEFAULT_SORT_OPTION;
   const hasPageSizeFilter = pageSize !== DEFAULT_PAGE_SIZE_OPTION;
+  const hasAccountFilter = selectedAccounts.some(
+    (value) => Boolean(value) && value !== "all",
+  );
   const hasActiveFilters =
-    hasCategoryFilter || hasSortFilter || hasPageSizeFilter;
+    hasCategoryFilter || hasSortFilter || hasPageSizeFilter || hasAccountFilter;
 
   const handleClearFilters = () => {
     handleCategoryChange("all");
     handleSortChange(DEFAULT_SORT_OPTION);
     handlePageSizeChange(DEFAULT_PAGE_SIZE_OPTION);
+    handleFlowFilterChange(DEFAULT_FLOW_FILTER);
+    onSelectedAccountsChange(["all"]);
   };
 
   const summaryCardClasses =
@@ -175,7 +204,7 @@ function FiltersPanelComponent({
 
   return (
     <section className="flex flex-col gap-2">
-      <div className={`${summaryCardClasses} flex flex-col gap-0`}>
+      <div className={`${summaryCardClasses} flex flex-col`}>
         <FilterSummary
           dateRange={dateRange}
           isCollapsed={isCollapsed}
@@ -184,7 +213,14 @@ function FiltersPanelComponent({
           hasActiveFilters={hasActiveFilters}
           onClearFilters={handleClearFilters}
         />
-        <div className="flex items-center justify-between gap-3 border-t border-slate-100 px-0 py-2">
+        <div className="border-t border-slate-100 px-2 py-2">
+          <AccountFilterSelect
+            accounts={accounts}
+            selectedAccounts={selectedAccounts}
+            onSelectedAccountsChange={onSelectedAccountsChange}
+          />
+        </div>
+        <div className="flex items-center justify-between gap-3 border-t border-slate-100 px-3 py-2">
           <div className="flex-1">
             <FilterChips
               categoryFilter={categoryFilter}
@@ -193,12 +229,14 @@ function FiltersPanelComponent({
               handleSortChange={handleSortChange}
               pageSize={pageSize}
               handlePageSizeChange={handlePageSizeChange}
+              flowFilter={flowFilter}
+              handleFlowFilterChange={handleFlowFilterChange}
               defaultCategories={categoryOptions}
             />
           </div>
           <button
             type="button"
-            className="rounded-full border border-transparent bg-gradient-to-br from-slate-900 to-slate-700 px-3 py-1 text-[0.6rem] font-semibold uppercase tracking-[0.25em] text-white shadow-lg shadow-slate-900/30 transition hover:from-slate-800 hover:to-slate-600 disabled:border-slate-400 disabled:bg-slate-200 disabled:text-slate-500 disabled:shadow-none disabled:cursor-not-allowed"
+            className="rounded-full border border-transparent bg-gradient-to-br from-slate-900 to-slate-700 px-3 py-1 text-[0.6rem] font-semibold uppercase tracking-[0.25em] text-white shadow-lg shadow-slate-900/30 transition-none hover:from-slate-800 hover:to-slate-600 disabled:border-slate-400 disabled:bg-slate-200 disabled:text-slate-500 disabled:shadow-none disabled:cursor-not-allowed"
             onClick={onSync}
             disabled={isSyncing}
           >
@@ -213,19 +251,25 @@ function FiltersPanelComponent({
           aria-hidden={isCollapsed}
         >
           <div className="rounded-lg border border-slate-200 bg-white/95 p-3 shadow-sm shadow-slate-900/5">
-            <FilterTray
-              control={control}
-              dateRange={dateRange}
-              pageSize={pageSize}
-              categoryFilter={categoryFilter}
-              sortOption={sortOption}
-              normalizedCategoryOptions={normalizedCategoryOptions}
-              handleDateChange={handleDateChange}
-              handlePageSizeChange={handlePageSizeChange}
-              handleCategoryChange={handleCategoryChange}
-              handleSortChange={handleSortChange}
-              dateError={dateError}
-            />
+            <div className="flex flex-col gap-2">
+              <FilterTray
+                control={control}
+                dateRange={dateRange}
+                pageSize={pageSize}
+                categoryFilter={categoryFilter}
+                sortOption={sortOption}
+                normalizedCategoryOptions={normalizedCategoryOptions}
+                handleDateChange={handleDateChange}
+                handlePageSizeChange={handlePageSizeChange}
+                handleCategoryChange={handleCategoryChange}
+                handleSortChange={handleSortChange}
+                dateError={dateError}
+              />
+                <FlowFilterControls
+                  flowFilter={flowFilter}
+                  onFlowFilterChange={handleFlowFilterChange}
+                />
+            </div>
           </div>
         </Collapsible.Content>
       </Collapsible.Root>
