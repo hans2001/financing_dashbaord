@@ -1,19 +1,23 @@
 ## ADDED Requirements
-### Requirement: Category filters derive their options from a time-range snapshot and support multi-selection
-The dashboard SHALL populate the category picker/chips from a snapshot of every category that exists for the selected accounts and date range, rather than only from the subset that happens to be rendered inside the current transactions page, and it SHALL allow users to select multiple categories from that snapshot before applying the combined filter to the table.
+### Requirement: Category selector shows every snapshot category inside a shadcn-styled popover and feeds multi-selection state to `categoryFilters`
+The dashboard SHALL present every normalized category returned by the snapshot endpoint for the current accounts/date range inside a dropdown-based selection using the existing shadcn/ui primitives (popover, button, checkbox). The selector SHALL ignore which categories are currently rendered in the table, and each choice SHALL immediately update the shared `categoryFilters` state so repeated `category` parameters drive the `/api/transactions`, `/summary`, and trend queries.
 
-#### Scenario: Snapshot-driven picker remains stable when a category is applied
-- **GIVEN** the transactions API has returned a snapshot of categories for the current accounts/date range and the UI shows chips/dropdown derived from that list
-- **WHEN** the user selects one category and the table re-renders with the filtered rows
-- **THEN** the category picker options/chips MUST still include every category in the snapshot, not just the filtered ones, and the user MUST be able to switch to another category without losing the remaining options
-- **AND** the snapshot request MUST ignore the current category filters so the same snapshot can drive all subsequent category changes
+#### Scenario: Snapshot-driven selector stays complete while filters change
+- **GIVEN** the snapshot endpoint returns every normalized category for the selected accounts/date range
+- **WHEN** the user opens the category selector and toggles one or more options
+- **THEN** every category from the snapshot MUST remain visible inside the popover (even if it disappears from the paginated table) and toggling the checkbox MUST propagate the normalized value into `categoryFilters` without collapsing or filtering the selector itself
+- **AND** the selector SHALL use shadcn/ui components so the height/width stays consistent with the other filter controls in the tray
 
-#### Scenario: Multi-category filter updates the table
-- **GIVEN** the user selects two categories from the snapshot-driven picker
-- **WHEN** the dashboard reloads the transactions data
-- **THEN** the request to `/api/transactions` SHALL include both categories (e.g., repeated `category` query parameters), the backend SHALL filter with `where.normalizedCategory.in`, and the table SHALL show rows for both categories while the summary aggregates continue to honor that combination
+#### Scenario: Selector interacts with the filters tray without submitting forms
+- **GIVEN** the filters tray is expanded and the category selector is collapsed by default
+- **WHEN** the user clicks the selector trigger
+- **THEN** a popover SHALL layer over the filters UI showing the multi-select grid with shadcn checkboxes, AND it SHALL close only when the user clicks outside or explicitly closes it (not when toggling a checkbox)
 
-#### Scenario: Chips stay in sync with multi-select state
-- **WHEN** a user adds or removes a category via the chips or multiselect control
-- **THEN** each chip SHALL reflect one of the selected categories, removing a chip SHALL decrement the applied set without collapsing the rest, and the chip strip SHALL persist even when the tray is collapsed or the table is paginated
-- **AND** clearing all category chips SHALL reset the multi-category filter back to the default selection (e.g., no filter or `["all"]`)
+#### Scenario: Multi-category selection drives requests and chips
+- **GIVEN** the user selects several categories from the snapshot-driven selector
+- **WHEN** the dashboard reloads transactions/summary/trend data
+- **THEN** each request SHALL include the repeated `category` query parameters (one per normalized category), the backend SHALL filter against `where.normalizedCategory.in`, and the aggregates/table rows SHALL reflect the combination while the chip strip in the filters header stays synced with the array state
+
+#### Scenario: Clearing filters resets snapshots
+- **WHEN** the user clears all category chips
+- **THEN** the `categoryFilters` array SHALL reset to `[]`, the selector trigger SHALL read “All categories”, and subsequent snapshot queries SHALL continue returning the full palette for reuse

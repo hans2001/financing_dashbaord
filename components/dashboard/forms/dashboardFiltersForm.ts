@@ -33,7 +33,6 @@ const dashboardFiltersSchema = z
       .string()
       .regex(ISO_DATE_REGEX, { message: "End date must be YYYY-MM-DD" }),
     pageSize: z.enum(PAGE_SIZE_STRING_VALUES),
-    categoryFilter: z.string(),
     sortOption: z.enum(SORT_OPTION_VALUES),
   })
   .superRefine((values, ctx) => {

@@ -25,7 +25,7 @@ type BuildTransactionsSearchParamsArgs = {
   currentPage: number;
   sortOption: SortOptionValue;
   flowFilter: FlowFilterValue;
-  categoryFilter: string;
+  categoryFilters: string[];
 };
 
 export const buildTransactionsSearchParams = ({
@@ -35,7 +35,7 @@ export const buildTransactionsSearchParams = ({
   currentPage,
   sortOption,
   flowFilter,
-  categoryFilter,
+  categoryFilters,
 }: BuildTransactionsSearchParamsArgs) => {
   const params = new URLSearchParams();
   if (pageSize === "all") {
@@ -53,9 +53,16 @@ export const buildTransactionsSearchParams = ({
   params.set("endDate", dateRange.end);
   params.set("sort", sortOption);
   params.set("flow", flowFilter);
-  if (categoryFilter !== "all") {
-    params.set("category", categoryFilter);
-  }
+  const normalizedCategories = Array.from(
+    new Set(
+      categoryFilters
+        .map((value) => value?.trim())
+        .filter(Boolean),
+    ),
+  );
+  normalizedCategories.forEach((category) => {
+    params.append("category", category);
+  });
   return params;
 };
 
@@ -66,7 +73,7 @@ type TransactionsArgs = {
   currentPage: number;
   sortOption: SortOptionValue;
   flowFilter: FlowFilterValue;
-  categoryFilter: string;
+  categoryFilters: string[];
   refreshKey: number;
   hasDateRange: boolean;
 };
@@ -83,7 +90,7 @@ export function useTransactionsData({
   currentPage,
   sortOption,
   flowFilter,
-  categoryFilter,
+  categoryFilters,
   refreshKey,
   hasDateRange,
 }: TransactionsArgs) {
@@ -94,6 +101,13 @@ export function useTransactionsData({
 
   const accountFilterKey =
     normalizedAccountIds.length > 0 ? normalizedAccountIds.join(",") : "all";
+
+  const categoryFiltersKey = useMemo(() => {
+    if (categoryFilters.length === 0) {
+      return "all";
+    }
+    return categoryFilters.slice().sort().join(",");
+  }, [categoryFilters]);
 
   const queryKey = useMemo(
     () =>
@@ -106,7 +120,7 @@ export function useTransactionsData({
         currentPage,
         sortOption,
         flowFilter,
-        categoryFilter,
+        categoryFiltersKey,
         refreshKey,
       ] as const,
     [
@@ -117,7 +131,7 @@ export function useTransactionsData({
       currentPage,
       sortOption,
       flowFilter,
-      categoryFilter,
+      categoryFiltersKey,
       refreshKey,
     ],
   );
@@ -133,7 +147,7 @@ export function useTransactionsData({
         currentPage,
         sortOption,
         flowFilter,
-        categoryFilter,
+        categoryFilters,
       });
 
       const response = await fetch(`/api/transactions?${params.toString()}`, {

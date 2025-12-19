@@ -67,10 +67,10 @@ describe("useDashboardFilters", () => {
     expect(result.current.currentPage).toBe(4);
 
     act(() => {
-      result.current.setCategoryFilter("Food");
+      result.current.setCategoryFilters(["Food"]);
     });
 
     expect(result.current.currentPage).toBe(0);
-    expect(result.current.categoryFilter).toBe("Food");
+    expect(result.current.categoryFilters).toEqual(["Food"]);
   });
 });

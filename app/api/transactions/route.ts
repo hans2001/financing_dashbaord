@@ -47,7 +47,11 @@ export async function GET(request: Request) {
     const offsetParam = Number(url.searchParams.get("offset") ?? 0);
     const sortParam = url.searchParams.get("sort") ?? "date_desc";
     const flowParam = url.searchParams.get("flow") ?? "all";
-    const categoryParam = url.searchParams.get("category");
+    const categoryParams = url
+      .searchParams
+      .getAll("category")
+      .map((value) => value?.trim())
+      .filter(Boolean);
 
     const limit =
       limitParam === null
@@ -113,8 +117,15 @@ export async function GET(request: Request) {
       where.amount = { gt: 0 };
     }
 
-    if (categoryParam && categoryParam !== "all") {
-      where.normalizedCategory = categoryParam;
+    const normalizedCategoryFilters = Array.from(
+      new Set(
+        categoryParams.filter((value) => value !== "all"),
+      ),
+    );
+    if (normalizedCategoryFilters.length > 0) {
+      where.normalizedCategory = {
+        in: normalizedCategoryFilters,
+      };
     }
 
     const orderBy = (() => {

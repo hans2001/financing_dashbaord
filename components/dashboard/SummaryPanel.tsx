@@ -1,8 +1,19 @@
-import { memo } from "react";
+"use client";
+
+import { memo, useState } from "react";
 import {
+  FlowFilterValue,
   formatCurrency,
   getCategoryPieColor,
 } from "./dashboard-utils";
+import type { TrendBucket } from "./hooks/useTrendData";
+import { TrendLinePanel } from "./TrendLinePanel";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 
 type SummaryPanelProps = {
   activeSpentTotal: number;
@@ -16,6 +27,11 @@ type SummaryPanelProps = {
   activeLargestIncome: number;
   categoriesToShow: [string, number][];
   categoryEmptyMessage: string;
+  trendBuckets: TrendBucket[];
+  isLoadingTrend: boolean;
+  trendError: string | null;
+  flowFilter: FlowFilterValue;
+  categoryFilters: string[];
 };
 
 type PieSegment = {
@@ -120,10 +136,18 @@ function SummaryPanelComponent({
   activeLargestIncome,
   categoriesToShow,
   categoryEmptyMessage,
+  trendBuckets,
+  isLoadingTrend,
+  trendError,
+  flowFilter,
+  categoryFilters,
 }: SummaryPanelProps) {
+  const [activeTab, setActiveTab] = useState<"categories" | "trend">(
+    "categories",
+  );
   return (
-    <div className="flex min-w-0 flex-col gap-3">
-      <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm shadow-slate-900/5">
+    <div className="flex min-w-0 flex-col gap-2 h-full">
+      <div className="rounded-lg border border-slate-200 bg-white p-2 shadow-sm shadow-slate-900/5">
         <div className="pb-2">
           <p className="text-[0.5rem] uppercase tracking-[0.3em] text-slate-400">
             Spending summary
@@ -194,14 +218,56 @@ function SummaryPanelComponent({
           </div>
         </dl>
       </div>
-      <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm shadow-slate-900/5">
-        <p className="text-[0.55rem] uppercase tracking-[0.3em] text-slate-400">
-          Top categories
-        </p>
-        <CategoryPie
-          categoriesToShow={categoriesToShow}
-          categoryEmptyMessage={categoryEmptyMessage}
-        />
+      <div className="rounded-lg border border-slate-200 bg-white p-2 shadow-sm shadow-slate-900/5 flex flex-col h-[16rem]">
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) => setActiveTab(value as "categories" | "trend")}
+          className="flex flex-col h-full space-y-1"
+        >
+          <div className="flex items-center justify-between">
+            <p className="text-[0.55rem] uppercase tracking-[0.3em] text-slate-400">
+              {activeTab === "categories" ? "Top categories" : "Spending trend"}
+            </p>
+            <TabsList className="flex w-fit justify-end gap-0.5 rounded-xl bg-white px-0.5 py-0 text-[0.55rem] h-auto">
+              <TabsTrigger
+                value="categories"
+                className="px-1 py-0 text-[0.45rem] font-semibold uppercase tracking-[0.3em]"
+              >
+                Cats
+              </TabsTrigger>
+              <TabsTrigger
+                value="trend"
+                className="px-1 py-0 text-[0.45rem] font-semibold uppercase tracking-[0.3em]"
+              >
+                Trend
+              </TabsTrigger>
+            </TabsList>
+          </div>
+          <TabsContent
+            value="categories"
+            className="flex flex-col flex-1 pt-1"
+          >
+            <div className="flex flex-1 flex-col items-center justify-center">
+              <CategoryPie
+                categoriesToShow={categoriesToShow}
+                categoryEmptyMessage={categoryEmptyMessage}
+              />
+            </div>
+          </TabsContent>
+          <TabsContent
+            value="trend"
+            className="flex flex-col flex-1 pt-1"
+          >
+            <TrendLinePanel
+              buckets={trendBuckets}
+              isLoading={isLoadingTrend}
+              error={trendError}
+              dateRange={dateRange}
+              flowFilter={flowFilter}
+              categoryFilters={categoryFilters}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

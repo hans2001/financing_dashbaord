@@ -1,6 +1,6 @@
 'use client'
 
-import { memo, useEffect, useId, useMemo } from "react";
+import { memo, useCallback, useEffect, useId, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import * as Collapsible from "@radix-ui/react-collapsible";
 
@@ -26,14 +26,31 @@ import {
   isIsoDateString,
 } from "./forms/dashboardFiltersForm";
 
+const normalizeCategoryFilters = (values: string[]) =>
+  Array.from(
+    new Set(
+      values
+        .map((value) => value?.trim())
+        .filter(Boolean),
+    ),
+  ).sort((a, b) => a.localeCompare(b));
+
+const arraysAreEqual = (a: string[], b: string[]) => {
+  if (a.length !== b.length) {
+    return false;
+  }
+  return a.every((value, index) => value === b[index]);
+};
+
 type FiltersPanelProps = {
   dateRange: { start: string; end: string };
   onDateRangeChange: (next: { start: string; end: string }) => void;
   pageSize: PageSizeOptionValue;
   onPageSizeChange: (value: PageSizeOptionValue) => void;
-  categoryFilter: string;
-  onCategoryFilterChange: (value: string) => void;
+  categoryFilters: string[];
+  onCategoryFiltersChange: (value: string[]) => void;
   categoryOptions: string[];
+  isLoadingCategories: boolean;
   sortOption: SortOptionValue;
   onSortOptionChange: (value: SortOptionValue) => void;
   flowFilter: FlowFilterValue;
@@ -52,11 +69,12 @@ function FiltersPanelComponent({
   onDateRangeChange,
   pageSize,
   onPageSizeChange,
-  categoryFilter,
-  onCategoryFilterChange,
+  categoryFilters,
+  onCategoryFiltersChange,
   categoryOptions,
   sortOption,
   onSortOptionChange,
+  isLoadingCategories,
   isCollapsed,
   onToggleCollapsed,
   isSyncing,
@@ -77,7 +95,6 @@ function FiltersPanelComponent({
       start: dateRange.start,
       end: dateRange.end,
       pageSize: normalizePageSize(pageSize),
-      categoryFilter,
       sortOption,
     },
     resolver: dashboardFiltersResolver,
@@ -89,31 +106,27 @@ function FiltersPanelComponent({
       start: dateRange.start,
       end: dateRange.end,
       pageSize: normalizePageSize(pageSize),
-      categoryFilter,
       sortOption,
     });
-  }, [
-    reset,
-    dateRange.start,
-    dateRange.end,
-    pageSize,
-    categoryFilter,
-    sortOption,
-  ]);
+  }, [reset, dateRange.start, dateRange.end, pageSize, sortOption]);
 
   const dateError = errors.start?.message ?? errors.end?.message;
   const detailTrayId = useId();
 
-  const normalizedCategoryOptions = useMemo(() => {
-    if (
-      categoryFilter !== "all" &&
-      categoryFilter.trim().length > 0 &&
-      !categoryOptions.includes(categoryFilter)
-    ) {
-      return [categoryFilter, ...categoryOptions];
+  const availableCategoryOptions = useMemo(() => {
+    const optionSet = new Set(categoryOptions);
+    for (const filter of categoryFilters) {
+      if (filter?.trim()) {
+        optionSet.add(filter);
+      }
     }
-    return categoryOptions;
-  }, [categoryFilter, categoryOptions]);
+    return Array.from(optionSet).sort((a, b) => a.localeCompare(b));
+  }, [categoryFilters, categoryOptions]);
+  const normalizedCurrentFilters = useMemo(
+    () => normalizeCategoryFilters(categoryFilters),
+    [categoryFilters],
+  );
+
 
   const handleDateChange = (field: "start" | "end", value: string) => {
     const otherField = field === "start" ? "end" : "start";
@@ -155,11 +168,16 @@ function FiltersPanelComponent({
     onPageSizeChange(normalized as PageSizeOptionValue);
   };
 
-  const handleCategoryChange = (nextValue: string) => {
-    if (nextValue !== categoryFilter) {
-      onCategoryFilterChange(nextValue);
-    }
-  };
+  const handleCategoryFiltersChange = useCallback(
+    (nextFilters: string[]) => {
+      const normalizedNext = normalizeCategoryFilters(nextFilters);
+      if (arraysAreEqual(normalizedNext, normalizedCurrentFilters)) {
+        return;
+      }
+      onCategoryFiltersChange(normalizedNext);
+    },
+    [normalizedCurrentFilters, onCategoryFiltersChange],
+  );
 
   const handleSortChange = (nextValue: SortOptionValue) => {
     if (nextValue !== sortOption) {
@@ -173,8 +191,7 @@ function FiltersPanelComponent({
     }
   };
 
-  const hasCategoryFilter =
-    Boolean(categoryFilter && categoryFilter !== "all");
+  const hasCategoryFilter = categoryFilters.length > 0;
   const hasSortFilter = sortOption !== DEFAULT_SORT_OPTION;
   const hasPageSizeFilter = pageSize !== DEFAULT_PAGE_SIZE_OPTION;
   const hasAccountFilter = selectedAccounts.some(
@@ -184,7 +201,7 @@ function FiltersPanelComponent({
     hasCategoryFilter || hasSortFilter || hasPageSizeFilter || hasAccountFilter;
 
   const handleClearFilters = () => {
-    handleCategoryChange("all");
+    handleCategoryFiltersChange([]);
     handleSortChange(DEFAULT_SORT_OPTION);
     handlePageSizeChange(DEFAULT_PAGE_SIZE_OPTION);
     handleFlowFilterChange(DEFAULT_FLOW_FILTER);
@@ -223,8 +240,8 @@ function FiltersPanelComponent({
         <div className="flex items-center justify-between gap-3 border-t border-slate-100 px-3 py-2">
           <div className="flex-1">
             <FilterChips
-              categoryFilter={categoryFilter}
-              handleCategoryChange={handleCategoryChange}
+              categoryFilters={categoryFilters}
+              handleCategoryFiltersChange={handleCategoryFiltersChange}
               sortOption={sortOption}
               handleSortChange={handleSortChange}
               pageSize={pageSize}
@@ -252,19 +269,20 @@ function FiltersPanelComponent({
         >
           <div className="rounded-lg border border-slate-200 bg-white/95 p-3 shadow-sm shadow-slate-900/5">
             <div className="flex flex-col gap-2">
-              <FilterTray
-                control={control}
-                dateRange={dateRange}
-                pageSize={pageSize}
-                categoryFilter={categoryFilter}
-                sortOption={sortOption}
-                normalizedCategoryOptions={normalizedCategoryOptions}
-                handleDateChange={handleDateChange}
-                handlePageSizeChange={handlePageSizeChange}
-                handleCategoryChange={handleCategoryChange}
-                handleSortChange={handleSortChange}
-                dateError={dateError}
-              />
+          <FilterTray
+            control={control}
+            dateRange={dateRange}
+            pageSize={pageSize}
+            categoryFilters={categoryFilters}
+            sortOption={sortOption}
+            categoryOptions={availableCategoryOptions}
+            isCategoryLoading={isLoadingCategories}
+            handleDateChange={handleDateChange}
+            handlePageSizeChange={handlePageSizeChange}
+            handleCategoryFiltersChange={handleCategoryFiltersChange}
+            handleSortChange={handleSortChange}
+            dateError={dateError}
+          />
                 <FlowFilterControls
                   flowFilter={flowFilter}
                   onFlowFilterChange={handleFlowFilterChange}

@@ -1,20 +1,24 @@
+'use client';
+
 import { Controller, type Control } from "react-hook-form";
 
 import { PAGE_SIZE_OPTIONS, SORT_OPTIONS } from "../dashboard-utils";
 import type { PageSizeOptionValue, SortOptionValue } from "../dashboard-utils";
 import type { DashboardFiltersFormValues } from "../forms/dashboardFiltersForm";
+import { CategorySelector } from "./CategorySelector";
 type FilterTrayProps = {
   control: Control<DashboardFiltersFormValues>;
   dateRange: { start: string; end: string };
   pageSize: PageSizeOptionValue;
-  categoryFilter: string;
   sortOption: SortOptionValue;
   handleDateChange: (field: "start" | "end", value: string) => void;
   handlePageSizeChange: (value: string) => void;
-  handleCategoryChange: (value: string) => void;
+  categoryFilters: string[];
+  handleCategoryFiltersChange: (value: string[]) => void;
   handleSortChange: (value: SortOptionValue) => void;
-  normalizedCategoryOptions: string[];
   dateError: string | undefined;
+  categoryOptions: string[];
+  isCategoryLoading: boolean;
 };
 
 const FILTERS_ROW_CLASSES =
@@ -32,13 +36,14 @@ export function FilterTray({
   control,
   dateRange,
   pageSize,
-  categoryFilter,
   sortOption,
   handleDateChange,
   handlePageSizeChange,
-  handleCategoryChange,
+  categoryFilters,
+  handleCategoryFiltersChange,
   handleSortChange,
-  normalizedCategoryOptions,
+  categoryOptions,
+  isCategoryLoading,
   dateError,
 }: FilterTrayProps) {
   return (
@@ -84,27 +89,11 @@ export function FilterTray({
         </label>
         <label className={`${FIELD_WRAPPER_CLASSES} ${PRIMARY_FIELD_COL_SPAN}`}>
           <span className={FIELD_LABEL_CLASSES}>Category</span>
-          <Controller
-            control={control}
-            name="categoryFilter"
-            render={({ field }) => (
-              <select
-                {...field}
-                value={field.value ?? categoryFilter}
-                onChange={(event) => {
-                  field.onChange(event);
-                  handleCategoryChange(event.target.value);
-                }}
-                className={FIELD_CONTROL_CLASSES}
-              >
-                <option value="all">All categories</option>
-                {normalizedCategoryOptions.map((category) => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </select>
-            )}
+          <CategorySelector
+            categories={categoryOptions}
+            selectedCategories={categoryFilters}
+            onChange={handleCategoryFiltersChange}
+            isLoading={isCategoryLoading}
           />
         </label>
         <label className={`${FIELD_WRAPPER_CLASSES} ${PRIMARY_FIELD_COL_SPAN}`}>

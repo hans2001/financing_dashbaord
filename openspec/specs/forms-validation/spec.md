@@ -3,7 +3,7 @@
 `FiltersPanel` SHALL run every filter control through one `react-hook-form` instance powered by a Zod schema so defaults, validation, and UI feedback stay in sync without duplicating logic.
 
 #### Scenario: Defaults stay aligned with `useDashboardFilters`
-- **GIVEN** `useDashboardFilters` exposes `selectedAccounts`, `dateRange`, `pageSize`, `flowFilter`, `categoryFilter`, and `sortOption`,
+- **GIVEN** `useDashboardFilters` exposes `selectedAccounts`, `dateRange`, `pageSize`, `flowFilter`, and `sortOption` while the category tags are driven by `categoryFilters`,
 - **WHEN** `FiltersPanel` mounts,
 - **THEN** the RHF default values MUST mirror those setters, so the schema can validate them with the shared values (e.g., the first flow option, the computed default date range, etc.) and the UI never drifts from the persisted state.
 
@@ -12,10 +12,10 @@
 - **WHEN** the user changes any control,
 - **THEN** the schema MUST still run (rejecting malformed dates or unsupported sort values), the form state MUST respect the normalized value, and only after validation succeeds SHALL the corresponding `onXChange` callback (`onDateRangeChange`, `onPageSizeChange`, etc.) run so the store never sees invalid input.
 
-#### Scenario: Schema honors category filter work in progress
-- **GIVEN** `categoryOptions` may grow thanks to the ongoing category-filter thread,
-- **WHEN** the user selects a category (even one not part of the current summary data yet),
-- **THEN** the form schema MUST accept any string and continue to call `onCategoryFilterChange`, avoiding hard-coded option lists that would conflict with the category-filter effort.
+#### Scenario: Tag grid stays flexible while the schema validates the core filters
+- **GIVEN** `categoryFilters` is managed by the dedicated tag grid and `categoryOptions` can grow once the snapshot completes,
+- **WHEN** the user toggles a tag outside of the current page results,
+- **THEN** the RHF schema MUST remain focused on the other filters (dates, page-size, sort) so that the growing tag set never requires schema changes and the UI still updates the shared state through `onCategoryFiltersChange`.
 
 ### Requirement: Description editor enforces server-friendly limits
 `DescriptionEditor` SHALL use the same RHF + Zod stack so the client-side validation mirrors the `/api/transactions/[id]/description` contract and surfaces errors before hitting the network.

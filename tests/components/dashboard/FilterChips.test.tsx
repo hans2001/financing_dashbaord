@@ -17,8 +17,8 @@ describe("FilterChips", () => {
 
     render(
       <FilterChips
-        categoryFilter="all"
-        handleCategoryChange={categoryChange}
+        categoryFilters={[]}
+        handleCategoryFiltersChange={categoryChange}
         sortOption="date_desc"
         handleSortChange={sortChange}
         pageSize={DEFAULT_PAGE_SIZE_OPTION}
@@ -46,8 +46,8 @@ describe("FilterChips", () => {
 
     render(
       <FilterChips
-        categoryFilter="Groceries"
-        handleCategoryChange={categoryChange}
+        categoryFilters={["Groceries"]}
+        handleCategoryFiltersChange={categoryChange}
         sortOption="amount_desc"
         handleSortChange={sortChange}
         pageSize={customPageSizeOption.value}
@@ -65,7 +65,7 @@ describe("FilterChips", () => {
     expect(screen.getByText("Flow: Spending only")).toBeDefined();
 
     fireEvent.click(screen.getByLabelText("Remove Category: Groceries"));
-    expect(categoryChange).toHaveBeenCalledWith("all");
+    expect(categoryChange).toHaveBeenCalledWith([]);
     fireEvent.click(screen.getByLabelText("Remove Sort: Amount (high → low)"));
     expect(sortChange).toHaveBeenCalledWith("date_desc");
     fireEvent.click(

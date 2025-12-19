@@ -11,13 +11,13 @@ describe("buildTransactionsSearchParams", () => {
       currentPage: 2,
       sortOption: "date_desc",
       flowFilter: "all",
-      categoryFilter: "Groceries",
+      categoryFilters: ["Groceries"],
     });
 
     expect(params.getAll("accountId")).toEqual(["checking", "savings"]);
     expect(params.get("limit")).toBe("25");
     expect(params.get("offset")).toBe(String(2 * 25));
-    expect(params.get("category")).toBe("Groceries");
+    expect(params.getAll("category")).toEqual(["Groceries"]);
     expect(params.get("sort")).toBe("date_desc");
   });
 
@@ -29,7 +29,7 @@ describe("buildTransactionsSearchParams", () => {
       currentPage: 5,
       sortOption: "amount_desc",
       flowFilter: "spending",
-      categoryFilter: "all",
+      categoryFilters: [],
     });
 
     expect(params.getAll("accountId")).toEqual([]);

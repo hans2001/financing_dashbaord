@@ -15,7 +15,10 @@ import {
   useTransactionsData,
 } from "./hooks/useTransactionsData";
 import { useSummaryData } from "./hooks/useSummaryData";
+import { useCategorySnapshot } from "./hooks/useCategorySnapshot";
 import { useSelectionState } from "./hooks/useSelectionState";
+import { useTrendData } from "./hooks/useTrendData";
+import type { TrendBucket } from "./hooks/useTrendData";
 import { useDashboardFilters } from "./hooks/useDashboardFilters";
 
 type DashboardState = {
@@ -32,7 +35,7 @@ type DashboardState = {
   pageSize: PageSizeOptionValue;
   sortOption: SortOptionValue;
   flowFilter: FlowFilterValue;
-  categoryFilter: string;
+  categoryFilters: string[];
   currentPage: number;
   totalPages: number;
   showingStart: number;
@@ -47,6 +50,10 @@ type DashboardState = {
   summaryRowsLabel: string;
   summaryErrorText: string | null;
   categoryOptions: string[];
+  isLoadingCategoryOptions: boolean;
+  trendBuckets: TrendBucket[];
+  isLoadingTrend: boolean;
+  trendError: string | null;
   activeSpentTotal: number;
   activeIncomeTotal: number;
   activeSpendCount: number;
@@ -73,7 +80,7 @@ type DashboardActions = {
   setPageSize: (value: PageSizeOptionValue) => void;
   setSortOption: (value: SortOptionValue) => void;
   setFlowFilter: (value: FlowFilterValue) => void;
-  setCategoryFilter: (value: string) => void;
+  setCategoryFilters: (value: string[]) => void;
   handleSync: () => Promise<void>;
   setShowAccountsPanel: Dispatch<SetStateAction<boolean>>;
   setAreFiltersCollapsed: Dispatch<SetStateAction<boolean>>;
@@ -95,8 +102,8 @@ export function useDashboardState(): DashboardState & DashboardActions {
     setSortOption: setSortOptionFilter,
     flowFilter,
     setFlowFilter: setFlowFilterFilter,
-    categoryFilter,
-    setCategoryFilter: setCategoryFilterFilter,
+    categoryFilters,
+    setCategoryFilters: setCategoryFiltersFilter,
     currentPage,
     setCurrentPage,
     numericPageSize,
@@ -124,7 +131,7 @@ export function useDashboardState(): DashboardState & DashboardActions {
     currentPage,
     sortOption,
     flowFilter,
-    categoryFilter,
+    categoryFilters,
     refreshKey,
     hasDateRange,
   });
@@ -132,7 +139,30 @@ export function useDashboardState(): DashboardState & DashboardActions {
   const { summaryData, isLoadingSummary, summaryError } = useSummaryData({
     selectedAccounts,
     dateRange,
-    categoryFilter,
+    categoryFilters,
+    refreshKey,
+    hasDateRange,
+  });
+
+  const {
+    trendBuckets,
+    isLoadingTrend,
+    trendError,
+  } = useTrendData({
+    selectedAccounts,
+    dateRange,
+    flowFilter,
+    categoryFilters,
+    refreshKey,
+    hasDateRange,
+  });
+
+  const {
+    categories: categorySnapshotOptions,
+    isLoadingCategories,
+  } = useCategorySnapshot({
+    selectedAccounts,
+    dateRange,
     refreshKey,
     hasDateRange,
   });
@@ -193,12 +223,12 @@ export function useDashboardState(): DashboardState & DashboardActions {
     },
     [onClearSelection, setFlowFilterFilter],
   );
-  const setCategoryFilter = useCallback(
-    (value: string) => {
+  const setCategoryFilters = useCallback(
+    (value: string[]) => {
       onClearSelection();
-      setCategoryFilterFilter(value);
+      setCategoryFiltersFilter(value);
     },
-    [onClearSelection, setCategoryFilterFilter],
+    [onClearSelection, setCategoryFiltersFilter],
   );
 
   const handleDescriptionSaved = useCallback(
@@ -294,12 +324,23 @@ export function useDashboardState(): DashboardState & DashboardActions {
   }, [summaryData]);
 
   const categoryOptions = useMemo(() => {
-    const optionSet = new Set(allCategoryOptions);
-    if (categoryFilter !== "all" && categoryFilter.trim().length > 0) {
-      optionSet.add(categoryFilter);
+    const optionSet = new Set<string>();
+    const sourceOptions =
+      categorySnapshotOptions.length > 0
+        ? categorySnapshotOptions
+        : allCategoryOptions;
+    for (const option of sourceOptions) {
+      if (option?.trim()) {
+        optionSet.add(option);
+      }
+    }
+    for (const filter of categoryFilters) {
+      if (filter?.trim()) {
+        optionSet.add(filter);
+      }
     }
     return Array.from(optionSet).sort((a, b) => a.localeCompare(b));
-  }, [allCategoryOptions, categoryFilter]);
+  }, [allCategoryOptions, categoryFilters, categorySnapshotOptions]);
   const hasPreviousPage = !isShowingAllRows && currentPage > 0;
   const hasNextPage =
     !isShowingAllRows &&
@@ -338,7 +379,7 @@ export function useDashboardState(): DashboardState & DashboardActions {
     pageSize,
     sortOption,
     flowFilter,
-    categoryFilter,
+    categoryFilters,
     currentPage,
     totalPages,
     showingStart,
@@ -352,7 +393,11 @@ export function useDashboardState(): DashboardState & DashboardActions {
     categoryEmptyMessage,
     summaryRowsLabel,
     summaryErrorText,
+    trendBuckets,
+    isLoadingTrend,
+    trendError,
     categoryOptions,
+    isLoadingCategoryOptions: isLoadingCategories,
     activeSpentTotal,
     activeIncomeTotal,
     activeSpendCount,
@@ -376,7 +421,7 @@ export function useDashboardState(): DashboardState & DashboardActions {
     setPageSize,
     setSortOption,
     setFlowFilter,
-    setCategoryFilter,
+    setCategoryFilters,
     handleSync,
     setShowAccountsPanel,
     setAreFiltersCollapsed,

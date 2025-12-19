@@ -5,9 +5,9 @@ The dashboard currently lets users focus on a single category at a time and deri
 
 ## What Changes
 - Extend the transactions and summary APIs to understand multiple category query parameters so the backend can filter against combinations while the front end still drives the snapshot from the same source of truth.
-- Fetch a dedicated category snapshot (by date range and account selection) that is not invalidated by the current category filter; derive the filter dropdown/chips from that snapshot so the options stay stable even when the table re-renders with a subset of rows.
-- Update the dashboard filter state, `FiltersPanel`, and the supporting child components (summary, tray, chips) to track and render multiple categories, keeping the UI within each ~300-line module and reusing shared primitives or shadcn-friendly patterns where possible. Ensure chips and dropdowns can add/remove categories, and clearing them resets only the relevant selection while preserving others.
-- Add targeted tests that verify the multi-category selector draws options from the snapshot regardless of the paginated table view, that selecting/removing categories updates the table via `useTransactionsData`, and that API queries use the new multi-value parameter.
+- Fetch a dedicated category snapshot (by date range and account selection) that is not invalidated by the current category filter; render the filter UI from that stable list so the options stay visible even when the table re-renders with a subset of rows.
+- Update the dashboard filter state, `FiltersPanel`, and supporting components so the category picker stores a string array and renders it as an explicit, scrollable list/grid of tags (no free-form typing allowed). Users should only be able to toggle the predefined tags, and clearing the chips resets just that list.
+- Add targeted tests that verify the tag list renders the complete snapshot, selecting/removing tags updates the table via `useTransactionsData`, chips stay in sync and clearing still resets the state, and the APIs keep honoring repeated `category` parameters.
 
 ## Impact
 - Affected specs: `openspec/specs/dashboard/spec.md` (introduce new dashboard filter requirement)

@@ -47,7 +47,11 @@ export async function GET(request: Request) {
       .filter(Boolean);
     const startDate = url.searchParams.get("startDate");
     const endDate = url.searchParams.get("endDate");
-    const categoryParam = url.searchParams.get("category");
+    const categoryParams = url
+      .searchParams
+      .getAll("category")
+      .map((value) => value?.trim())
+      .filter(Boolean);
     const where: TransactionWhereInput = {
       account: {
         bankItem: {
@@ -93,8 +97,15 @@ export async function GET(request: Request) {
       }
     }
 
-    if (categoryParam && categoryParam !== "all") {
-      where.normalizedCategory = categoryParam;
+    const normalizedCategoryFilters = Array.from(
+      new Set(
+        categoryParams.filter((value) => value !== "all"),
+      ),
+    );
+    if (normalizedCategoryFilters.length > 0) {
+      where.normalizedCategory = {
+        in: normalizedCategoryFilters,
+      };
     }
 
     const spendWhere: TransactionWhereInput = {

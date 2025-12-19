@@ -16,6 +16,7 @@ import { GET as transactionsGET } from "@/app/api/transactions/route";
 import { POST as transactionsSyncPOST } from "@/app/api/transactions/sync/route";
 import { GET as transactionsSummaryGET } from "@/app/api/transactions/summary/route";
 import { PATCH as updateTransactionDescriptionPATCH } from "@/app/api/transactions/[transactionId]/description/route";
+import { GET as transactionsCategoriesGET } from "@/app/api/transactions/categories/route";
 import { POST as createLinkTokenPOST } from "@/app/api/plaid/create-link-token/route";
 import { POST as exchangePublicTokenPOST } from "@/app/api/plaid/exchange-public-token/route";
 import { POST as plaidWebhookPOST } from "@/app/api/plaid/webhook/route";
@@ -207,18 +208,24 @@ describe("transactions listing", () => {
     expect(payload.total).toBe(0);
   });
 
-  it("filters by normalized category when provided", async () => {
+  it("filters by normalized categories when provided", async () => {
     prismaMock.transaction.findMany.mockImplementationOnce(async (args) => {
-      expect(args?.where?.normalizedCategory).toBe("Food");
+      expect(args?.where?.normalizedCategory).toEqual({
+        in: ["Food", "Rent"],
+      });
       return [];
     });
     prismaMock.transaction.count.mockImplementationOnce(async (args) => {
-      expect(args?.where?.normalizedCategory).toBe("Food");
+      expect(args?.where?.normalizedCategory).toEqual({
+        in: ["Food", "Rent"],
+      });
       return 0;
     });
 
     const response = await transactionsGET(
-      new Request("http://localhost/api/transactions?category=Food"),
+      new Request(
+        "http://localhost/api/transactions?category=Food&category=Rent",
+      ),
     );
     expect(response.status).toBe(200);
     const payload = await response.json();
@@ -331,10 +338,12 @@ describe("transactions summary", () => {
     });
   });
 
-  it("applies category filter when provided", async () => {
+  it("applies category filters when provided", async () => {
     prismaMock.transaction.aggregate
       .mockImplementationOnce(async (args) => {
-        expect(args?.where?.normalizedCategory).toBe("Rent");
+        expect(args?.where?.normalizedCategory).toEqual({
+          in: ["Rent", "Food"],
+        });
         return {
           _sum: { amount: new Prisma.Decimal("0") },
           _min: { amount: new Prisma.Decimal("0") },
@@ -342,7 +351,9 @@ describe("transactions summary", () => {
         };
       })
       .mockImplementationOnce(async (args) => {
-        expect(args?.where?.normalizedCategory).toBe("Rent");
+        expect(args?.where?.normalizedCategory).toEqual({
+          in: ["Rent", "Food"],
+        });
         return {
           _sum: { amount: new Prisma.Decimal("0") },
           _max: { amount: new Prisma.Decimal("0") },
@@ -352,16 +363,22 @@ describe("transactions summary", () => {
 
     prismaMock.transaction.groupBy
       .mockImplementationOnce(async (args) => {
-        expect(args?.where?.normalizedCategory).toBe("Rent");
+        expect(args?.where?.normalizedCategory).toEqual({
+          in: ["Rent", "Food"],
+        });
         return [];
       })
       .mockImplementationOnce(async (args) => {
-        expect(args?.where?.normalizedCategory).toBe("Rent");
+        expect(args?.where?.normalizedCategory).toEqual({
+          in: ["Rent", "Food"],
+        });
         return [];
       });
 
     const response = await transactionsSummaryGET(
-      new Request("http://localhost/api/transactions/summary?category=Rent"),
+      new Request(
+        "http://localhost/api/transactions/summary?category=Rent&category=Food",
+      ),
     );
 
     expect(response.status).toBe(200);
@@ -378,10 +395,51 @@ describe("transactions summary", () => {
   });
 });
 
+describe("transactions categories", () => {
+  it("returns the snapshot of normalized categories for the requested range", async () => {
+    prismaMock.account.findMany.mockResolvedValue([
+      { id: "account-1", bankItem: { userId: "demo-user" } },
+    ]);
+    prismaMock.transaction.groupBy.mockResolvedValue([
+      { normalizedCategory: "Food" },
+      { normalizedCategory: "Rent" },
+    ]);
+
+    const response = await transactionsCategoriesGET(
+      new Request(
+        "http://localhost/api/transactions/categories?accountId=account-1&startDate=2024-01-01&endDate=2024-01-31",
+      ),
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      categories: ["Food", "Rent"],
+    });
+  });
+
+  it("rejects invalid account filters", async () => {
+    prismaMock.account.findMany.mockResolvedValue([]);
+
+    const response = await transactionsCategoriesGET(
+      new Request(
+        "http://localhost/api/transactions/categories?accountId=missing",
+      ),
+    );
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: "Account filter not found" });
+  });
+});
+
 describe("transactions sync", () => {
   it("fetches plaids transactions, skips existing entries, and reports counters", async () => {
     prismaMock.bankItem.findMany.mockResolvedValue([
-      { id: "bank-1", accessToken: "access-1", userId: "demo-user" },
+      {
+        id: "bank-1",
+        accessToken: "access-1",
+        lastSyncedRequestId: null,
+        lastSyncedTotalTransactions: 0,
+      },
     ]);
 
     const plaidTransactions = [
@@ -408,7 +466,11 @@ describe("transactions sync", () => {
     ];
 
     plaidClientMock.transactionsGet.mockResolvedValue({
-      data: { transactions: plaidTransactions },
+      data: {
+        transactions: plaidTransactions,
+        total_transactions: 2,
+        request_id: "req-1",
+      },
     });
 
     prismaMock.account.findMany.mockResolvedValue([
@@ -435,9 +497,9 @@ describe("transactions sync", () => {
     expect(plaidClientMock.transactionsGet).toHaveBeenCalledWith({
       access_token: "access-1",
       end_date: expect.any(String),
-        start_date: expect.any(String),
-        options: { count: 500 },
-      });
+      start_date: expect.any(String),
+      options: { count: 500, offset: 0 },
+    });
     expect(refreshAccountBalancesMock).toHaveBeenCalledWith({
       bankItemId: "bank-1",
       accessToken: "access-1",
@@ -446,7 +508,12 @@ describe("transactions sync", () => {
 
   it("persists normalized categories and flipped amounts", async () => {
     prismaMock.bankItem.findMany.mockResolvedValue([
-      { id: "bank-1", accessToken: "access-1", userId: "demo-user" },
+      {
+        id: "bank-1",
+        accessToken: "access-1",
+        lastSyncedRequestId: "req-1",
+        lastSyncedTotalTransactions: 2,
+      },
     ]);
 
     const plaidTransactions = [
@@ -463,7 +530,11 @@ describe("transactions sync", () => {
     ];
 
     plaidClientMock.transactionsGet.mockResolvedValue({
-      data: { transactions: plaidTransactions },
+      data: {
+        transactions: plaidTransactions,
+        total_transactions: 1,
+        request_id: "req-2",
+      },
     });
 
     prismaMock.account.findMany.mockResolvedValue([
@@ -491,6 +562,89 @@ describe("transactions sync", () => {
         }),
       }),
     );
+    expect(plaidClientMock.transactionsGet).toHaveBeenCalledWith({
+      access_token: "access-1",
+      end_date: expect.any(String),
+      start_date: expect.any(String),
+      options: { count: 500, offset: 0 },
+    });
+  });
+
+  it("paginates through Plaid batches when total exceeds the page size", async () => {
+    const previousPageSize = process.env.PLAID_TRANSACTIONS_PAGE_SIZE;
+    process.env.PLAID_TRANSACTIONS_PAGE_SIZE = "2";
+
+    prismaMock.bankItem.findMany.mockResolvedValue([
+      {
+        id: "bank-1",
+        accessToken: "access-1",
+        lastSyncedRequestId: null,
+        lastSyncedTotalTransactions: 0,
+      },
+    ]);
+
+    const createTx = (id: string) => ({
+      transaction_id: id,
+      account_id: "account-a",
+      amount: 10,
+      name: `Tx ${id}`,
+      merchant_name: `Tx ${id}`,
+      category: ["Misc"],
+      pending: false,
+      date: "2024-01-01",
+    });
+
+    const firstPage = [createTx("tx-1"), createTx("tx-2")];
+    const secondPage = [createTx("tx-3")];
+
+    plaidClientMock.transactionsGet
+      .mockResolvedValueOnce({
+        data: {
+          transactions: firstPage,
+          total_transactions: 3,
+          request_id: "req-1",
+        },
+      })
+      .mockResolvedValueOnce({
+        data: {
+          transactions: secondPage,
+          total_transactions: 3,
+          request_id: "req-2",
+        },
+      });
+
+    prismaMock.account.findMany.mockResolvedValue([
+      { id: "account-a", plaidAccountId: "account-a" },
+    ]);
+
+    prismaMock.transaction.findMany
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([]);
+
+    const response = await transactionsSyncPOST(
+      new Request("http://localhost/api/transactions/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+
+    const payload = await response.json();
+    expect(payload).toEqual({ fetched: 3, inserted: 3, updated: 0 });
+    expect(plaidClientMock.transactionsGet).toHaveBeenCalledTimes(2);
+    expect(plaidClientMock.transactionsGet).toHaveBeenNthCalledWith(1, {
+      access_token: "access-1",
+      end_date: expect.any(String),
+      start_date: expect.any(String),
+      options: { count: 2, offset: 0 },
+    });
+    expect(plaidClientMock.transactionsGet).toHaveBeenNthCalledWith(2, {
+      access_token: "access-1",
+      end_date: expect.any(String),
+      start_date: expect.any(String),
+      options: { count: 2, offset: 2 },
+    });
+
+    process.env.PLAID_TRANSACTIONS_PAGE_SIZE = previousPageSize;
   });
 });
 

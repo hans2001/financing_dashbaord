@@ -13,8 +13,8 @@ import type {
 } from "../dashboard-utils";
 
 type FilterChipsProps = {
-  categoryFilter: string;
-  handleCategoryChange: (value: string) => void;
+  categoryFilters: string[];
+  handleCategoryFiltersChange: (value: string[]) => void;
   sortOption: SortOptionValue;
   handleSortChange: (value: SortOptionValue) => void;
   pageSize: PageSizeOptionValue;
@@ -31,8 +31,8 @@ type FilterChip = {
 };
 
 export function FilterChips({
-  categoryFilter,
-  handleCategoryChange,
+  categoryFilters,
+  handleCategoryFiltersChange,
   sortOption,
   handleSortChange,
   pageSize,
@@ -56,13 +56,19 @@ export function FilterChips({
         }`
       : null;
 
-  if (categoryFilter && categoryFilter !== "all") {
+  categoryFilters.forEach((category) => {
+    if (!category) {
+      return;
+    }
     chips.push({
-      key: "category",
-      label: `Category: ${categoryFilter}`,
-      onRemove: () => handleCategoryChange("all"),
+      key: `category-${category}`,
+      label: `Category: ${category}`,
+      onRemove: () =>
+        handleCategoryFiltersChange(
+          categoryFilters.filter((value) => value !== category),
+        ),
     });
-  }
+  });
 
   const sortOptionData = SORT_OPTIONS.find((option) => option.value === sortOption);
   if (sortOption !== DEFAULT_SORT_OPTION && sortOptionData) {

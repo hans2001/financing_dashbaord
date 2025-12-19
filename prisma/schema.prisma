@@ -30,6 +30,9 @@ model BankItem {
   accessToken     String
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+  lastSyncedRequestId        String?
+  lastSyncedTotalTransactions Int?     @default(0)
+  lastSyncedAt               DateTime?
 
   accounts        Account[]
 }

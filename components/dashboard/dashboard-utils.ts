@@ -1,5 +1,7 @@
 import type { Transaction } from "./types";
 
+export const DATE_LOCALE = "en-US";
+
 export const FAMILY_AUTH_HEADER = "x-family-secret";
 export const FAMILY_USER_HEADER = "x-family-user-id";
 export const FAMILY_AUTH_SECRET =
@@ -43,7 +45,7 @@ export const formatBalanceTimestamp = (value?: string | null) => {
   if (Number.isNaN(date.getTime())) {
     return "No balance data yet";
   }
-  return `Updated ${date.toLocaleDateString(undefined, {
+  return `Updated ${date.toLocaleDateString(DATE_LOCALE, {
     month: "short",
     day: "numeric",
     hour: "2-digit",

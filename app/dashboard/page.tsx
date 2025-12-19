@@ -31,57 +31,62 @@ export default function DashboardPage() {
     currentPage,
     totalPages,
     isShowingAllRows,
-    hasPreviousPage,
-    hasSelection,
-    categoriesToShow,
-    categoryEmptyMessage,
-    summaryRowsLabel,
-    summaryErrorText,
-    activeSpentTotal,
-    activeIncomeTotal,
-    activeSpendCount,
-    activeIncomeCount,
-    activeLargestExpense,
-    activeLargestIncome,
-    setDateRange,
-    setPageSize,
-    setSortOption,
-    setFlowFilter,
-    setCategoryFilter,
-    onPreviousPage,
-    onFirstPage,
-    onLastPage,
-    onNextPage,
-    hasNextPage,
-    onClearSelection,
-    handleDescriptionSaved,
-    handleSync,
-    isSyncing,
-    showAccountsPanel,
-    setShowAccountsPanel,
-    areFiltersCollapsed,
-    setAreFiltersCollapsed,
-    selectedAccounts,
-    setSelectedAccounts,
-    dateRange,
-    pageSize,
-    sortOption,
-    flowFilter,
-    categoryFilter,
-    categoryOptions,
-  } = useDashboardState();
+  hasPreviousPage,
+  hasSelection,
+  categoriesToShow,
+  categoryEmptyMessage,
+  summaryRowsLabel,
+  summaryErrorText,
+  activeSpentTotal,
+  activeIncomeTotal,
+  activeSpendCount,
+  activeIncomeCount,
+  activeLargestExpense,
+  activeLargestIncome,
+  setDateRange,
+  setPageSize,
+  setSortOption,
+  setFlowFilter,
+  setCategoryFilters,
+  onPreviousPage,
+  onFirstPage,
+  onLastPage,
+  onNextPage,
+  hasNextPage,
+  onClearSelection,
+  handleDescriptionSaved,
+  handleSync,
+  isSyncing,
+  showAccountsPanel,
+  setShowAccountsPanel,
+  areFiltersCollapsed,
+  setAreFiltersCollapsed,
+  selectedAccounts,
+  setSelectedAccounts,
+  dateRange,
+  pageSize,
+  sortOption,
+  flowFilter,
+  categoryFilters,
+  trendBuckets,
+  isLoadingTrend,
+  trendError,
+  categoryOptions,
+  isLoadingCategoryOptions,
+} = useDashboardState();
 
   const renderOverview = (
-    <section className="flex flex-col gap-2 xl:flex-row xl:items-stretch">
+    <section className="flex flex-col gap-1 xl:flex-row xl:items-stretch">
       <div className="flex min-w-0 flex-[0.85] flex-col gap-2 h-full">
         <FiltersPanel
           dateRange={dateRange}
           onDateRangeChange={setDateRange}
           pageSize={pageSize}
           onPageSizeChange={setPageSize}
-          categoryFilter={categoryFilter}
-          onCategoryFilterChange={setCategoryFilter}
+          categoryFilters={categoryFilters}
+          onCategoryFiltersChange={setCategoryFilters}
           categoryOptions={categoryOptions}
+          isLoadingCategories={isLoadingCategoryOptions}
           sortOption={sortOption}
           onSortOptionChange={setSortOption}
           flowFilter={flowFilter}
@@ -133,19 +138,24 @@ export default function DashboardPage() {
             </div>
           }
         >
-          <SummaryPanel
-            activeSpentTotal={activeSpentTotal}
-            activeIncomeTotal={activeIncomeTotal}
-            summaryRowsLabel={summaryRowsLabel}
-            summaryErrorText={summaryErrorText}
-            dateRange={dateRange}
-            activeSpendCount={activeSpendCount}
-            activeIncomeCount={activeIncomeCount}
-            activeLargestExpense={activeLargestExpense}
-            activeLargestIncome={activeLargestIncome}
-            categoriesToShow={categoriesToShow}
-            categoryEmptyMessage={categoryEmptyMessage}
-          />
+        <SummaryPanel
+          activeSpentTotal={activeSpentTotal}
+          activeIncomeTotal={activeIncomeTotal}
+          summaryRowsLabel={summaryRowsLabel}
+          summaryErrorText={summaryErrorText}
+          dateRange={dateRange}
+          activeSpendCount={activeSpendCount}
+          activeIncomeCount={activeIncomeCount}
+          activeLargestExpense={activeLargestExpense}
+          activeLargestIncome={activeLargestIncome}
+          categoriesToShow={categoriesToShow}
+          categoryEmptyMessage={categoryEmptyMessage}
+          trendBuckets={trendBuckets}
+          isLoadingTrend={isLoadingTrend}
+          trendError={trendError}
+          flowFilter={flowFilter}
+          categoryFilters={categoryFilters}
+        />
         </Suspense>
         <LinkedAccountsPanel
           accounts={accounts}

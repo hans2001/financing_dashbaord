@@ -1,28 +1,22 @@
 # Personal Finance Dashboard
 
-This dashboard helps Hans and Yuki keep every household transaction and asset under one roof. It’s designed to:
+This app gives Hans, Yuki, and anyone they invite a single pane that mixes Plaid-linked accounts, manual entries, and insight cards so every household transaction, balance, and trend lives in one place.
 
-- Surface spending and income trends across linked financial accounts,
-- Make it easy to compare balance/activity in one place (saving the need to hop between bank portals),
-- Offer actionable insights (top categories, averages, linked accounts) so the family stays ahead of their budget.
+## Key features
 
-By syncing Plaid data and enabling manual tracking for supplemental sources, the app becomes a single source of truth for family finances (expenses, earners, and cross-border accounts). It now relies on Plaid production credentials so the dashboard reflects real balances and transactions.
+- **Unified data** – merges Plaid accounts, manual overrides, and supplemental sources into a searchable, sortable transactions view with smart categorization helpers.
+- **Insightful summaries** – balance snapshots, flow filters, trend indicators, and charts highlight how spending and income are behaving at a glance.
+- **Ops-friendly workflows** – documented helpers (`refresh-demo-data`, `set-base-url`, etc.) keep demos fresh and onboarding fast while keeping Plaid production credentials at the core.
 
-See `TECHNICAL.md` for implementation details, setup, and commands.
+## Getting started
 
-## Local HTTPS with Plaid
-1. Start an HTTPS tunnel (e.g., `ngrok http 3000`) and copy the generated `https://...` URL.
-2. Run `npm run set-base-url https://your-tunnel.ngrok.io` so `APP_BASE_URL` (in `.env.local` / `.env`) matches the origin Plaid Link will open.
-3. Use that HTTPS URL in your browser when opening `/connect`, and start the dev server with HMR disabled (`npm run dev:no-hmr`) to avoid websocket proxy failures. If you still want hot reload, tunnel through ngrok with `ngrok http 3000 --host-header="localhost:3000"` so the websocket upgrades survive.
+1. Copy `.env.example` to `.env.local`, fill in Plaid credentials (client ID, secret, webhook URL if used), `APP_BASE_URL`, and any database secrets. `PLAID_TRANSACTIONS_DAYS_REQUESTED` defaults to `730` but can be tuned before linking to request up to two years of history.
+2. Install dependencies (`npm install`) and point Plaid Link at your local app via a secure tunnel (`ngrok http 3000`); update the base URL (`npm run set-base-url https://<tunnel>.ngrok.io`) and start the dev server (`npm run dev:no-hmr`).
+3. Visit `/connect`, complete the Plaid flow, and return to `/dashboard`. Use the filters/insights panel to explore ranges, flow types, and sorting controls.
 
-Keeping `APP_BASE_URL` in sync avoids the fullscreen/protocol errors when Plaid’s iframe tries to talk to your app. Repeat step 2 whenever your tunnel URL changes.
+## Maintenance notes
 
-## Extending Plaid transaction history
-Plaid only returns ~90 days of transactions unless you request more during Link/token creation. This app now reads `PLAID_TRANSACTIONS_DAYS_REQUESTED` (defaults to `730`, the Plaid max) and passes it to `link/token/create`, so every newly linked item asks Plaid for up to two years of history.
+- Keep `APP_BASE_URL` aligned with the tunnel URL so Plaid’s iframe can communicate with the app; rerun `npm run set-base-url` whenever the tunnel changes.
+- To reset the demo account, run `npm run refresh-demo-data` and re-link via `/connect` so the latest accounts/transactions repopulate the dashboard.
 
-- Set `PLAID_TRANSACTIONS_DAYS_REQUESTED` in `.env.local` before linking. Valid range is 1–730.
-- The actual lookback is still constrained by each bank (some institutions ignore values above 90 days).
-- Existing items can’t be expanded after the fact. If you need a deeper history for an item that was linked with the default 90-day window, delete it and re-link after setting the env variable.
-
-## Resetting demo data
-Run `npm run refresh-demo-data` to wipe the demo user's bank items, accounts, and transactions. Re-linking via `/connect` will repopulate the tables with the latest production access token and account data.
+See `TECHNICAL.md` for implementation details, setup, and additional commands.

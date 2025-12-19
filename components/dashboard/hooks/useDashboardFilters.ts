@@ -15,6 +15,16 @@ import type {
   SortOptionValue,
 } from "../dashboard-utils";
 
+const normalizeCategoryFilters = (values: string[]) => {
+  return Array.from(
+    new Set(
+      values
+        .map((value) => value?.trim())
+        .filter(Boolean),
+    ),
+  );
+};
+
 export type DashboardFilters = {
   selectedAccounts: string[];
   setSelectedAccounts: (value: string[]) => void;
@@ -26,8 +36,8 @@ export type DashboardFilters = {
   setSortOption: (value: SortOptionValue) => void;
   flowFilter: FlowFilterValue;
   setFlowFilter: (value: FlowFilterValue) => void;
-  categoryFilter: string;
-  setCategoryFilter: (value: string) => void;
+  categoryFilters: string[];
+  setCategoryFilters: (value: string[]) => void;
   currentPage: number;
   setCurrentPage: Dispatch<SetStateAction<number>>;
   numericPageSize: number;
@@ -50,7 +60,6 @@ export function useDashboardFilters(): DashboardFilters {
   const defaultPageSizeOption: PageSizeOptionValue = DEFAULT_PAGE_SIZE_OPTION;
   const defaultSort = (SORT_OPTIONS[0]?.value ?? "date_desc") as SortOptionValue;
   const defaultFlowFilter = (FLOW_FILTERS[0]?.value ?? "all") as FlowFilterValue;
-  const defaultCategoryFilter = "all";
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSizeState] =
     useState<PageSizeOptionValue>(defaultPageSizeOption);
@@ -58,8 +67,7 @@ export function useDashboardFilters(): DashboardFilters {
     useState<SortOptionValue>(defaultSort);
   const [flowFilter, setFlowFilterState] =
     useState<FlowFilterValue>(defaultFlowFilter);
-  const [categoryFilter, setCategoryFilterState] =
-    useState<string>(defaultCategoryFilter);
+  const [categoryFilters, setCategoryFiltersState] = useState<string[]>([]);
   const resetPagination = useCallback(() => {
     setCurrentPage(0);
   }, []);
@@ -98,10 +106,10 @@ export function useDashboardFilters(): DashboardFilters {
     },
     [resetPagination],
   );
-  const setCategoryFilter = useCallback(
-    (value: string) => {
+  const setCategoryFilters = useCallback(
+    (value: string[]) => {
       resetPagination();
-      setCategoryFilterState(value);
+      setCategoryFiltersState(normalizeCategoryFilters(value));
     },
     [resetPagination],
   );
@@ -122,8 +130,8 @@ export function useDashboardFilters(): DashboardFilters {
     setSortOption,
     flowFilter,
     setFlowFilter,
-    categoryFilter,
-    setCategoryFilter,
+    categoryFilters,
+    setCategoryFilters,
     currentPage,
     setCurrentPage,
     numericPageSize,

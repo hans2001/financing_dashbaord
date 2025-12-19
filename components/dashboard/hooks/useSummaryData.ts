@@ -7,7 +7,7 @@ import type { SummaryResponse } from "../types";
 type SummaryArgs = {
   selectedAccounts: string[];
   dateRange: { start: string; end: string };
-  categoryFilter: string;
+  categoryFilters: string[];
   refreshKey: number;
   hasDateRange: boolean;
 };
@@ -15,7 +15,7 @@ type SummaryArgs = {
 export function useSummaryData({
   selectedAccounts,
   dateRange,
-  categoryFilter,
+  categoryFilters,
   refreshKey,
   hasDateRange,
 }: SummaryArgs) {
@@ -30,13 +30,20 @@ export function useSummaryData({
   const accountFilterKey =
     normalizedAccountIds.length > 0 ? normalizedAccountIds.join(",") : "all";
 
+  const categoryFiltersKey = useMemo(() => {
+    if (categoryFilters.length === 0) {
+      return "all";
+    }
+    return categoryFilters.slice().sort().join(",");
+  }, [categoryFilters]);
+
   const summaryQuery = useQuery<SummaryResponse>({
     queryKey: [
       "transactions-summary",
       accountFilterKey,
       dateRange.start,
       dateRange.end,
-      categoryFilter,
+      categoryFiltersKey,
       refreshKey,
     ],
     enabled: hasDateRange,
@@ -47,9 +54,16 @@ export function useSummaryData({
       }
       params.set("startDate", dateRange.start);
       params.set("endDate", dateRange.end);
-      if (categoryFilter !== "all") {
-        params.set("category", categoryFilter);
-      }
+      const normalizedCategories = Array.from(
+        new Set(
+          categoryFilters
+            .map((value) => value?.trim())
+            .filter(Boolean),
+        ),
+      );
+      normalizedCategories.forEach((category) => {
+        params.append("category", category);
+      });
 
       const response = await fetch(
         `/api/transactions/summary?${params.toString()}`,

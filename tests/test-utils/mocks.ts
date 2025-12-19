@@ -46,6 +46,7 @@ export const prismaMock: PrismaMock = {
   bankItem: {
     findMany: createMockFn(),
     upsert: createMockFn(),
+    update: createMockFn(),
   },
   user: {
     upsert: createMockFn(),
