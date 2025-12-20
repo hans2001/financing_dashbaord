@@ -51,8 +51,15 @@ async function buildBatchLookups(transactions: PlaidTransaction[]) {
           },
         })
       : [];
+  type AccountLookupEntry = {
+    id: string;
+    plaidAccountId: string;
+  };
   const accountLookup = new Map(
-    accounts.map((account) => [account.plaidAccountId, account]),
+    (accounts as AccountLookupEntry[]).map((account) => [
+      account.plaidAccountId,
+      account,
+    ]),
   );
 
   const transactionIds = Array.from(
