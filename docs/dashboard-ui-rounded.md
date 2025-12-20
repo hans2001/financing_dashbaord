@@ -9,7 +9,7 @@
 - keep the existing tailwind utility stack and shared components, but favor `rounded-xl`, `rounded-lg`, or `rounded-md` for surfaces and controls.
 
 ## Implementation notes
-- Update `app/dashboard/page.tsx`, `components/dashboard/FiltersPanel.tsx`, `SummaryPanel.tsx`, and `LinkedAccountsPanel.tsx` to use the new radius values.
+- Update `app/dashboard/page.tsx`, `components/dashboard/FiltersPanel.tsx`, and `SummaryPanel.tsx` to use the new radius values.
 - Replace `rounded-full` buttons/badges with `rounded-md`/`rounded-sm` where a more conservative radius feels appropriate.
 - Ensure the style tokens used in multiple files stay consistent so future tweaks only require adjusting a few classes.
 

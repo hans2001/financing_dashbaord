@@ -11,6 +11,7 @@ export function useLinkToken() {
   const [linkToken, setLinkToken] = useState<string | null>(null);
   const [isFetchingToken, setIsFetchingToken] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [isUnauthorized, setIsUnauthorized] = useState(false);
 
   useEffect(() => {
     let ignore = false;
@@ -18,6 +19,7 @@ export function useLinkToken() {
     const loadLinkToken = async () => {
       setIsFetchingToken(true);
       setFetchError(null);
+      setIsUnauthorized(false);
 
       try {
         const response = await fetch("/api/plaid/create-link-token", {
@@ -25,6 +27,10 @@ export function useLinkToken() {
         });
         const data: LinkTokenResponse = await response.json();
         if (!response.ok) {
+          if (response.status === 401 || response.status === 403) {
+            setIsUnauthorized(true);
+            throw new Error(data?.error ?? "Please sign in to continue");
+          }
           throw new Error(data?.error ?? "Unable to create link token");
         }
         if (!ignore) {
@@ -50,5 +56,5 @@ export function useLinkToken() {
     };
   }, []);
 
-  return { linkToken, isFetchingToken, fetchError };
+  return { linkToken, isFetchingToken, fetchError, isUnauthorized };
 }

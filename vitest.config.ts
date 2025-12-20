@@ -8,6 +8,7 @@ export default defineConfig({
     alias: {
       "@": resolve(__dirname),
     },
+    setupFiles: ["./tests/setup.ts"],
     coverage: {
       reporter: ["text", "lcov"],
       include: ["app/**/*.ts", "lib/**/*.ts"],

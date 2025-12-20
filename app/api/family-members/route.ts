@@ -1,14 +1,13 @@
 import { jsonErrorResponse } from "@/lib/api-response";
 import { prisma } from "@/lib/prisma";
-import { authorizeRequest } from "@/lib/family-auth";
 import { ensureFamilyMember } from "@/lib/workspace-utils";
 import { NextResponse } from "next/server";
+import { getAuthenticatedUser, unauthorizedResponse } from "@/lib/server/session";
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
-    const auth = authorizeRequest(request);
-    if (!auth.ok) {
-      return auth.response;
+    if (!(await getAuthenticatedUser())) {
+      return unauthorizedResponse();
     }
 
     const members = await prisma.user.findMany({
@@ -31,9 +30,8 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const auth = authorizeRequest(request);
-    if (!auth.ok) {
-      return auth.response;
+    if (!(await getAuthenticatedUser())) {
+      return unauthorizedResponse();
     }
 
     const payload = await request.json();

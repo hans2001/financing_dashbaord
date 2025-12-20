@@ -6,9 +6,9 @@ type FlowFilterControlsProps = {
   onFlowFilterChange: (value: FlowFilterValue) => void;
 };
 
-const CONTAINER_CLASSES = "flex flex-wrap gap-2";
+const CONTAINER_CLASSES = "flex flex-wrap gap-1";
 const BUTTON_BASE_CLASSES =
-  "min-w-[120px] rounded-full border px-3 py-1 text-[0.6rem] font-semibold uppercase tracking-[0.3em] outline-none transition focus-visible:ring-2 focus-visible:ring-slate-400";
+  "min-w-[96px] rounded-full border px-2 py-1 text-[0.55rem] font-semibold uppercase tracking-[0.2em] outline-none transition focus-visible:ring-2 focus-visible:ring-slate-400";
 const ACTIVE_BUTTON_CLASSES =
   "bg-slate-900/10 border-slate-400 text-slate-900 shadow-none";
 const INACTIVE_BUTTON_CLASSES =

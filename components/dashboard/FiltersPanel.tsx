@@ -126,8 +126,6 @@ function FiltersPanelComponent({
     () => normalizeCategoryFilters(categoryFilters),
     [categoryFilters],
   );
-
-
   const handleDateChange = (field: "start" | "end", value: string) => {
     const otherField = field === "start" ? "end" : "start";
     const otherValue = getValues(otherField);
@@ -209,7 +207,7 @@ function FiltersPanelComponent({
   };
 
   const summaryCardClasses =
-    "rounded-xl border border-slate-200 bg-white px-3 py-0 shadow-sm shadow-slate-900/5";
+    "rounded-xl border border-slate-200 bg-white px-2 py-1 shadow-sm shadow-slate-900/5";
   const detailContentClasses = [
     "overflow-hidden transition-[max-height,opacity] duration-150 ease-in-out",
     isCollapsed
@@ -220,7 +218,7 @@ function FiltersPanelComponent({
     .join(" ");
 
   return (
-    <section className="flex flex-col gap-2">
+    <section className="flex flex-col gap-1">
       <div className={`${summaryCardClasses} flex flex-col`}>
         <FilterSummary
           dateRange={dateRange}
@@ -230,14 +228,14 @@ function FiltersPanelComponent({
           hasActiveFilters={hasActiveFilters}
           onClearFilters={handleClearFilters}
         />
-        <div className="border-t border-slate-100 px-2 py-2">
+        <div className="border-t border-slate-100 px-2 py-1">
           <AccountFilterSelect
             accounts={accounts}
             selectedAccounts={selectedAccounts}
             onSelectedAccountsChange={onSelectedAccountsChange}
           />
         </div>
-        <div className="flex items-center justify-between gap-3 border-t border-slate-100 px-3 py-2">
+        <div className="flex items-center justify-between gap-2 border-t border-slate-100 px-2 py-1">
           <div className="flex-1">
             <FilterChips
               categoryFilters={categoryFilters}
@@ -253,7 +251,7 @@ function FiltersPanelComponent({
           </div>
           <button
             type="button"
-            className="rounded-full border border-transparent bg-gradient-to-br from-slate-900 to-slate-700 px-3 py-1 text-[0.6rem] font-semibold uppercase tracking-[0.25em] text-white shadow-lg shadow-slate-900/30 transition-none hover:from-slate-800 hover:to-slate-600 disabled:border-slate-400 disabled:bg-slate-200 disabled:text-slate-500 disabled:shadow-none disabled:cursor-not-allowed"
+            className="rounded-full border border-transparent bg-gradient-to-br from-slate-900 to-slate-700 px-3 py-1 text-[0.55rem] font-semibold uppercase tracking-[0.2em] text-white shadow-lg shadow-slate-900/30 transition-none hover:from-slate-800 hover:to-slate-600 disabled:border-slate-400 disabled:bg-slate-200 disabled:text-slate-500 disabled:shadow-none disabled:cursor-not-allowed"
             onClick={onSync}
             disabled={isSyncing}
           >
@@ -267,26 +265,26 @@ function FiltersPanelComponent({
           className={detailContentClasses}
           aria-hidden={isCollapsed}
         >
-          <div className="rounded-lg border border-slate-200 bg-white/95 p-3 shadow-sm shadow-slate-900/5">
-            <div className="flex flex-col gap-2">
-          <FilterTray
-            control={control}
-            dateRange={dateRange}
-            pageSize={pageSize}
-            categoryFilters={categoryFilters}
-            sortOption={sortOption}
-            categoryOptions={availableCategoryOptions}
-            isCategoryLoading={isLoadingCategories}
-            handleDateChange={handleDateChange}
-            handlePageSizeChange={handlePageSizeChange}
-            handleCategoryFiltersChange={handleCategoryFiltersChange}
-            handleSortChange={handleSortChange}
-            dateError={dateError}
-          />
-                <FlowFilterControls
-                  flowFilter={flowFilter}
-                  onFlowFilterChange={handleFlowFilterChange}
-                />
+          <div className="rounded-lg border border-slate-200 bg-white/95 p-2 shadow-sm shadow-slate-900/5">
+            <div className="flex flex-col gap-1">
+              <FilterTray
+                control={control}
+                dateRange={dateRange}
+                pageSize={pageSize}
+                categoryFilters={categoryFilters}
+                sortOption={sortOption}
+                categoryOptions={availableCategoryOptions}
+                isCategoryLoading={isLoadingCategories}
+                handleDateChange={handleDateChange}
+                handlePageSizeChange={handlePageSizeChange}
+                handleCategoryFiltersChange={handleCategoryFiltersChange}
+                handleSortChange={handleSortChange}
+                dateError={dateError}
+              />
+              <FlowFilterControls
+                flowFilter={flowFilter}
+                onFlowFilterChange={handleFlowFilterChange}
+              />
             </div>
           </div>
         </Collapsible.Content>

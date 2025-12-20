@@ -1,8 +1,7 @@
 import { jsonErrorResponse } from "@/lib/api-response";
-import { DEMO_USER_ID } from "@/lib/demo-user";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { authorizeRequest } from "@/lib/family-auth";
+import { getAuthenticatedUser, unauthorizedResponse } from "@/lib/server/session";
 
 type TransactionWhereInput = NonNullable<
   Parameters<typeof prisma.transaction.findMany>[0]
@@ -10,9 +9,9 @@ type TransactionWhereInput = NonNullable<
 
 export async function GET(request: Request) {
   try {
-    const auth = authorizeRequest(request);
-    if (!auth.ok) {
-      return auth.response;
+    const user = await getAuthenticatedUser();
+    if (!user) {
+      return unauthorizedResponse();
     }
 
     const url = new URL(request.url);
@@ -25,7 +24,7 @@ export async function GET(request: Request) {
     const where: TransactionWhereInput = {
       account: {
         bankItem: {
-          userId: DEMO_USER_ID,
+          userId: user.id,
         },
       },
     };
@@ -39,7 +38,7 @@ export async function GET(request: Request) {
             in: uniqueAccountIds,
           },
           bankItem: {
-            userId: DEMO_USER_ID,
+            userId: user.id,
           },
         },
         select: {

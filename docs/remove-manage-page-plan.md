@@ -21,3 +21,6 @@ The Manage workspace UI and its supporting endpoints add a lot of surface area (
 ## Verification
 - `npm run lint` (if fast) or at least `npm test -- --runInBand`? (maybe heavy). Instead run the targeted test suite already covering API routes: `npm run test -- --runInBand tests/api-endpoints.test.ts`.
 - Manual smoke: open the dashboard (not possible here).
+
+## Status
+- Saved views and the manage workspace surface were removed via `openspec/changes/remove-saved-views`; keep this doc for historical context but rely on the change folder for implementation details.

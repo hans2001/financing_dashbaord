@@ -48,7 +48,12 @@ const reportLinkExit = async (
 
 export function PlaidConnectPanel() {
   const router = useRouter();
-  const { linkToken, isFetchingToken, fetchError } = useLinkToken();
+  const {
+    linkToken,
+    isFetchingToken,
+    fetchError,
+    isUnauthorized,
+  } = useLinkToken();
   const [isExchanging, setIsExchanging] = useState(false);
   const [exchangeError, setExchangeError] = useState<string | null>(null);
 
@@ -131,6 +136,18 @@ export function PlaidConnectPanel() {
         )}
         {exchangeError && (
           <p className="mt-2 text-sm text-red-600">{exchangeError}</p>
+        )}
+        {isUnauthorized && (
+          <div className="mt-4 rounded-lg border border-rose-200 bg-rose-50/80 p-4 text-sm text-rose-900">
+            <p>Please sign in to launch Plaid Link.</p>
+            <button
+              type="button"
+              className="mt-2 inline-flex items-center justify-center rounded-md border border-rose-300 bg-white px-4 py-2 text-xs font-semibold text-rose-700 shadow-sm shadow-rose-900/10 transition hover:bg-rose-50"
+              onClick={() => router.push("/auth/login")}
+            >
+              Go to login
+            </button>
+          </div>
         )}
 
         <div className="mt-8 rounded-lg border border-dashed border-slate-200 bg-slate-50/60 p-4">

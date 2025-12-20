@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { jsonErrorResponse } from "@/lib/api-response";
-import { authorizeRequest } from "@/lib/family-auth";
 import { prisma } from "@/lib/prisma";
+import { getAuthenticatedUser, unauthorizedResponse } from "@/lib/server/session";
 
 type RouteParams = {
   transactionId?: string;
@@ -15,9 +15,9 @@ type Params = {
 export async function PATCH(request: Request, props: Params) {
   try {
     const resolvedParams = await props.params;
-    const auth = authorizeRequest(request);
-    if (!auth.ok) {
-      return auth.response;
+    const user = await getAuthenticatedUser();
+    if (!user) {
+      return unauthorizedResponse();
     }
 
     const url = new URL(request.url);
@@ -46,6 +46,30 @@ export async function PATCH(request: Request, props: Params) {
         { error: "Description must be 500 characters or fewer" },
         { status: 400 },
       );
+    }
+
+    const transaction = await prisma.transaction.findUnique({
+      where: { id: transactionId },
+      select: {
+        id: true,
+        description: true,
+        account: {
+          select: {
+            bankItem: {
+              select: {
+                userId: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (
+      !transaction ||
+      transaction.account.bankItem.userId !== user.id
+    ) {
+      return unauthorizedResponse();
     }
 
     const updated = await prisma.transaction.update({

@@ -100,25 +100,23 @@ export function FilterChips({
   const chipContent =
     chips.length === 0 ? (
       defaultCategoriesLabel ? (
-        <span className="text-[0.65rem] text-slate-400">
+        <span className="text-[0.6rem] text-slate-400">
           {defaultCategoriesLabel}
         </span>
       ) : (
-        <span className="text-[0.65rem] text-slate-400">
-          No additional filters
-        </span>
+        <span className="text-[0.6rem] text-slate-400">No additional filters</span>
       )
     ) : (
       chips.map((chip) => (
         <div
           key={chip.key}
-          className="flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[0.65rem] text-slate-700"
+          className="flex items-center gap-0.5 rounded-full bg-slate-100 px-1.5 py-0.5 text-[0.6rem] text-slate-700"
         >
           <span>{chip.label}</span>
           <button
             type="button"
             aria-label={`Remove ${chip.label}`}
-            className="text-xs font-semibold text-slate-500 transition hover:text-slate-800"
+            className="text-[0.55rem] font-semibold text-slate-500 transition hover:text-slate-800"
             onClick={chip.onRemove}
           >
             ×
@@ -127,5 +125,5 @@ export function FilterChips({
       ))
     );
 
-  return <div className="flex flex-wrap items-center gap-1">{chipContent}</div>;
+  return <div className="flex flex-wrap items-center gap-0.5">{chipContent}</div>;
 }

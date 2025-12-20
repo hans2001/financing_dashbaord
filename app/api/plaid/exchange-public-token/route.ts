@@ -1,10 +1,13 @@
 import { jsonErrorResponse } from "@/lib/api-response";
 import { refreshAccountBalances } from "@/lib/account-balances";
-import { DEMO_USER_ID, ensureDemoUser } from "@/lib/demo-user";
 import { prisma } from "@/lib/prisma";
 import { plaidClient } from "@/lib/plaid";
 import { CountryCode } from "plaid";
 import { NextResponse } from "next/server";
+import {
+  getAuthenticatedUser,
+  unauthorizedResponse,
+} from "@/lib/server/session";
 
 export async function POST(request: Request) {
   try {
@@ -18,7 +21,10 @@ export async function POST(request: Request) {
       );
     }
 
-    await ensureDemoUser();
+    const user = await getAuthenticatedUser();
+    if (!user) {
+      return unauthorizedResponse();
+    }
 
     const exchangeResponse = await plaidClient.itemPublicTokenExchange({
       public_token: publicToken,
@@ -46,7 +52,7 @@ export async function POST(request: Request) {
         institutionName,
       },
       create: {
-        userId: DEMO_USER_ID,
+        userId: user.id,
         plaidItemId: item_id,
         institutionId,
         institutionName,

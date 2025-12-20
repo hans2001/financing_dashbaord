@@ -1,21 +1,20 @@
 import { jsonErrorResponse } from "@/lib/api-response";
-import { DEMO_USER_ID } from "@/lib/demo-user";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
-import { authorizeRequest } from "@/lib/family-auth";
+import { getAuthenticatedUser, unauthorizedResponse } from "@/lib/server/session";
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
-    const auth = authorizeRequest(request);
-    if (!auth.ok) {
-      return auth.response;
+    const user = await getAuthenticatedUser();
+    if (!user) {
+      return unauthorizedResponse();
     }
 
     const accounts = await prisma.account.findMany({
       where: {
         bankItem: {
-          userId: DEMO_USER_ID,
+          userId: user.id,
         },
       },
       include: {

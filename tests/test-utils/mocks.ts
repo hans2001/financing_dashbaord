@@ -1,4 +1,3 @@
-import type { AuthorizationResult } from "@/lib/family-auth";
 import { vi } from "vitest";
 
 type StandardFunction = (...args: unknown[]) => unknown;
@@ -10,6 +9,7 @@ type PrismaMock = {
   bankItem: PrismaCollection;
   user: PrismaCollection;
   savedView: PrismaCollection;
+  $queryRaw: AnyMock;
 };
 type PlaidClientMock = {
   transactionsGet: AnyMock;
@@ -23,8 +23,6 @@ type PlaidClientMock = {
 
 const createMockFn = () => vi.fn<StandardFunction>();
 
-export const authorizeRequestMock = vi.fn<(request: Request) => AuthorizationResult>();
-export const ensureDemoUserMock = vi.fn<() => Promise<{ id: string }>>();
 export const refreshAccountBalancesMock = createMockFn();
 
 export const prismaMock: PrismaMock = {
@@ -51,6 +49,7 @@ export const prismaMock: PrismaMock = {
   user: {
     upsert: createMockFn(),
     findMany: createMockFn(),
+    findFirst: createMockFn(),
     update: createMockFn(),
     updateMany: createMockFn(),
   },
@@ -61,6 +60,7 @@ export const prismaMock: PrismaMock = {
     update: createMockFn(),
     delete: createMockFn(),
   },
+  $queryRaw: createMockFn(),
 };
 
 export const plaidClientMock: PlaidClientMock = {
@@ -74,13 +74,16 @@ export const plaidClientMock: PlaidClientMock = {
 };
 
 export function resetMocks() {
-  authorizeRequestMock.mockReset();
-  ensureDemoUserMock.mockReset();
-
   Object.values(prismaMock).forEach((collection) => {
-    Object.values(collection).forEach((mock) => mock.mockReset());
+    if (typeof collection === "function") {
+      collection.mockReset();
+    } else {
+      Object.values(collection).forEach((mock) => mock.mockReset());
+    }
   });
 
   Object.values(plaidClientMock).forEach((mock) => mock.mockReset());
   refreshAccountBalancesMock.mockReset();
+
+  prismaMock.account.findMany!.mockResolvedValue([]);
 }

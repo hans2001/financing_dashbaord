@@ -19,9 +19,9 @@ A lightweight deployment checklist for this family dashboard. We keep the flow s
 1. **Prep Supabase**
    - Create or select the Supabase project (one per environment is enough for now).
    - Set the database password and copy the connection string.
-   - Run migrations: `DATABASE_URL="postgres://..." npx prisma migrate deploy`.
-   - Seed demo/baseline data if needed (`node scripts/refresh-bank-items.mjs`).
-   - Ensure Row Level Security is ON for the tables we expose.
+  - Run migrations: `DATABASE_URL="postgres://..." npx prisma migrate deploy`.
+  - Seed demo/baseline data if needed (`node scripts/refresh-bank-items.mjs`).
+  - Ensure Row Level Security is ON for `_prisma_migrations`, `User`, `BankItem`, `Account`, and `Transaction` and that their policies use Supabase claims (`auth.uid()`/`auth.role()`) before trusting Supabase clients.
 
 2. **Configure Vercel env vars**
    - In the Vercel dashboard → Project Settings → Environment Variables, add:

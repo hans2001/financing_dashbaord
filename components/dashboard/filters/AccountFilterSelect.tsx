@@ -143,19 +143,19 @@ export function AccountFilterSelect({
   }, [isOpen]);
 
   const containerClasses = [
-    "flex flex-wrap items-center justify-between gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-left text-[0.65rem] text-slate-700 shadow-sm transition",
+    "flex flex-wrap items-center justify-between gap-1 rounded-md border border-slate-200 bg-white px-2 py-1.5 text-left text-[0.6rem] text-slate-700 shadow-sm transition",
     isDisabled ? "opacity-60" : "hover:border-slate-300",
   ]
     .filter(Boolean)
     .join(" ");
 
   return (
-    <div className="relative flex flex-col gap-1" ref={containerRef}>
+    <div className="relative flex flex-col gap-0.5" ref={containerRef}>
       <div className="flex justify-between text-[0.55rem] font-semibold uppercase tracking-[0.35em] text-slate-500">
         <span>Accounts</span>
         <button
           type="button"
-          className="text-[0.55rem] font-semibold uppercase tracking-[0.3em] text-slate-400 transition hover:text-slate-700"
+          className="text-[0.5rem] font-semibold uppercase tracking-[0.25em] text-slate-400 transition hover:text-slate-700"
           onClick={handleSelectAll}
           disabled={isDisabled}
         >
@@ -163,18 +163,18 @@ export function AccountFilterSelect({
         </button>
       </div>
       <div className={containerClasses}>
-        <div className="flex flex-wrap gap-1 text-[0.65rem]">
+        <div className="flex flex-wrap gap-0.5 text-[0.6rem]">
           {firstVisible.length === 0 && !showAllTag ? (
-            <span className="text-slate-400">{placeholder}</span>
+            <span className="text-[0.55rem] text-slate-400">{placeholder}</span>
           ) : showAllTag ? (
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 font-semibold text-slate-600">
+            <span className="rounded-full bg-slate-100 px-1.5 py-0.5 font-semibold text-slate-600">
               All accounts
             </span>
           ) : (
             firstVisible.map((account) => (
               <span
                 key={account.id}
-                className="flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-slate-700"
+                className="flex items-center gap-0.5 rounded-full bg-slate-100 px-1.5 py-0.5 text-slate-700"
               >
                 <span className="truncate">{account.name}</span>
                 <span className="text-[0.55rem] text-slate-500">
@@ -195,7 +195,7 @@ export function AccountFilterSelect({
             ))
           )}
           {!showAllTag && tagState.overflowCount > 0 && (
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-500">
+            <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[0.55rem] text-slate-500">
               +{tagState.overflowCount} more
             </span>
           )}
@@ -204,7 +204,7 @@ export function AccountFilterSelect({
           type="button"
           aria-label="Toggle account selection"
           aria-expanded={isOpen}
-          className="text-xs font-semibold uppercase tracking-[0.4em] text-slate-400 transition hover:text-slate-700 disabled:text-slate-300"
+          className="text-[0.5rem] font-semibold uppercase tracking-[0.25em] text-slate-400 transition hover:text-slate-700 disabled:text-slate-300"
           onClick={handleToggle}
           disabled={isDisabled}
         >
@@ -213,13 +213,13 @@ export function AccountFilterSelect({
       </div>
       {isOpen && accounts.length > 0 && (
         <div className="absolute left-0 z-10 mt-1 w-full rounded-lg border border-slate-200 bg-white/95 shadow-lg shadow-slate-900/10">
-          <div className="max-h-64 overflow-y-auto p-3 text-[0.8rem]">
+          <div className="max-h-64 overflow-y-auto p-2 text-[0.75rem]">
             {accounts.map((account) => {
               const isSelected = normalizedSelectedIds.includes(account.id);
               return (
                 <label
                   key={account.id}
-                  className="flex cursor-pointer items-start gap-2 rounded-md px-2 py-1 hover:bg-slate-50"
+                  className="flex cursor-pointer items-start gap-2 rounded-md px-1.5 py-0.5 hover:bg-slate-50"
                 >
                   <input
                     type="checkbox"
@@ -229,16 +229,18 @@ export function AccountFilterSelect({
                     checked={isSelected}
                     onChange={() => handleAccountToggle(account.id)}
                   />
-                  <div className="flex flex-1 flex-col text-[0.75rem]">
+                  <div className="flex flex-1 flex-col text-[0.7rem]">
                     <span className="font-semibold text-slate-900">
                       {account.name}
                     </span>
-                  <span className="text-slate-500">
-                    {account.institutionName ?? "Plaid"} · {account.type}
-                  </span>
-                  <span className="text-[0.65rem] text-slate-500">
-                    {formatBalanceValue(account.currentBalance ?? account.availableBalance)}
-                  </span>
+                    <span className="text-[0.6rem] text-slate-500">
+                      {account.institutionName ?? "Plaid"} · {account.type}
+                    </span>
+                    <span className="text-[0.55rem] text-slate-500">
+                      {formatBalanceValue(
+                        account.currentBalance ?? account.availableBalance,
+                      )}
+                    </span>
                   </div>
                 </label>
               );

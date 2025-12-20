@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 
-import { FAMILY_AUTH_HEADERS, isBalanceStale } from "../dashboard-utils";
+import { isBalanceStale } from "../dashboard-utils";
 import type { Account } from "../types";
 
 type AccountsArgs = {
@@ -11,9 +11,7 @@ export function useAccountsData({ refreshKey }: AccountsArgs) {
   const accountsQuery = useQuery<Account[]>({
     queryKey: ["accounts", refreshKey],
     queryFn: async () => {
-      const response = await fetch("/api/accounts", {
-        headers: FAMILY_AUTH_HEADERS,
-      });
+      const response = await fetch("/api/accounts");
       const payload = await response.json();
       if (!response.ok) {
         throw new Error(payload?.error ?? "Unable to load accounts");

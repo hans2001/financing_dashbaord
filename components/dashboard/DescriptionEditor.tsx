@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import { FAMILY_AUTH_HEADERS, truncateInline } from "./dashboard-utils";
+import { truncateInline } from "./dashboard-utils";
 import {
   descriptionSchema,
   DESCRIPTION_MAX_LENGTH,
@@ -51,10 +51,9 @@ export function DescriptionEditor({
         `/api/transactions/${transactionId}/description`,
         {
           method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            ...FAMILY_AUTH_HEADERS,
-          },
+        headers: {
+          "Content-Type": "application/json",
+        },
           body: JSON.stringify({ description: data.description }),
         },
       );

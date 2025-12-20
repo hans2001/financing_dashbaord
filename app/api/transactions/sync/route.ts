@@ -1,12 +1,11 @@
 import { jsonErrorResponse } from "@/lib/api-response";
 import { refreshAccountBalances } from "@/lib/account-balances";
-import { DEMO_USER_ID } from "@/lib/demo-user";
 import { prisma } from "@/lib/prisma";
 import { plaidClient } from "@/lib/plaid";
 import { NextResponse } from "next/server";
-import { authorizeRequest } from "@/lib/family-auth";
-import { Prisma } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 import { getTransactionCategoryPath } from "@/lib/transaction-category";
+import { getAuthenticatedUser, unauthorizedResponse } from "@/lib/server/session";
 
 const DEFAULT_LOOKBACK_DAYS = 90;
 const DEFAULT_PAGE_SIZE = 500;
@@ -89,9 +88,9 @@ async function buildBatchLookups(transactions: PlaidTransaction[]) {
 
 export async function POST(request: Request) {
   try {
-    const auth = authorizeRequest(request);
-    if (!auth.ok) {
-      return auth.response;
+    const user = await getAuthenticatedUser();
+    if (!user) {
+      return unauthorizedResponse();
     }
 
     const payload =
@@ -121,13 +120,13 @@ export async function POST(request: Request) {
       ? await prisma.bankItem.findMany({
           where: {
             id: payload.bankItemId,
-            userId: DEMO_USER_ID,
+            userId: user.id,
           },
           select: selectColumns,
         })
       : await prisma.bankItem.findMany({
           where: {
-            userId: DEMO_USER_ID,
+            userId: user.id,
           },
           select: selectColumns,
         });

@@ -1,8 +1,8 @@
 import { jsonErrorResponse } from "@/lib/api-response";
-import { ensureDemoUser } from "@/lib/demo-user";
 import { plaidClient } from "@/lib/plaid";
 import { NextResponse } from "next/server";
 import { CountryCode, Products } from "plaid";
+import { getAuthenticatedUser, unauthorizedResponse } from "@/lib/server/session";
 
 const parseDaysRequested = () => {
   const rawValue = process.env.PLAID_TRANSACTIONS_DAYS_REQUESTED;
@@ -18,7 +18,10 @@ const parseDaysRequested = () => {
 
 export async function POST() {
   try {
-    const user = await ensureDemoUser();
+    const user = await getAuthenticatedUser();
+    if (!user) {
+      return unauthorizedResponse();
+    }
     const daysRequested = parseDaysRequested();
     const tokenResponse = await plaidClient.linkTokenCreate({
       user: { client_user_id: user.id },

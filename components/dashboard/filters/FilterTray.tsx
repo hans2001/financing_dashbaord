@@ -24,11 +24,11 @@ type FilterTrayProps = {
 const FILTERS_ROW_CLASSES =
   "flex flex-nowrap gap-1 overflow-x-auto pb-1 scrollbar-thin";
 const FIELD_WRAPPER_CLASSES =
-  "flex min-w-[7rem] flex-1 flex-shrink-0 flex-col gap-1 text-[0.55rem]";
+  "flex min-w-[7rem] flex-1 flex-shrink-0 flex-col gap-0.5 text-[0.5rem]";
 const FIELD_LABEL_CLASSES =
-  "text-[0.55rem] font-semibold uppercase tracking-[0.3em] text-slate-500";
+  "text-[0.5rem] font-semibold uppercase tracking-[0.3em] text-slate-500";
 const FIELD_CONTROL_CLASSES =
-  "h-7 w-full rounded-sm border border-slate-200 bg-white px-1.5 text-[0.65rem] text-slate-700 outline-none focus:border-slate-400 transition";
+  "h-6 w-full rounded-sm border border-slate-200 bg-white px-1 text-[0.6rem] text-slate-700 outline-none focus:border-slate-400 transition";
 const PRIMARY_FIELD_COL_SPAN = "min-w-[130px]";
 const DATE_FIELD_COL_SPAN = "min-w-[150px]";
 
@@ -47,7 +47,7 @@ export function FilterTray({
   dateError,
 }: FilterTrayProps) {
   return (
-    <form noValidate className="flex flex-col gap-2 text-[0.65rem]">
+    <form noValidate className="flex flex-col gap-1 text-[0.6rem]">
       <div className={FILTERS_ROW_CLASSES}>
         <label className={`${FIELD_WRAPPER_CLASSES} ${DATE_FIELD_COL_SPAN}`}>
           <span className={FIELD_LABEL_CLASSES}>From</span>

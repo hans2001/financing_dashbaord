@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { cn } from "@/lib/utils";
+import { LogoutButton } from "@/components/dashboard/LogoutButton";
 
 type NavigationLink = {
   href: string;
@@ -20,7 +21,7 @@ const navFontFamily =
 
 const LogoMark = () => (
   <span className="flex h-9 w-9 items-center justify-center rounded-2xl border border-primary/30 bg-gradient-to-br from-slate-100 via-primary/20 to-primary/10 shadow-sm shadow-primary/30">
-  <span className="flex h-6 w-6 items-center justify-center rounded-[14px] bg-white text-[0.65rem] leading-none font-semibold uppercase tracking-[0.35em] text-primary">
+    <span className="flex h-6 w-6 items-center justify-center rounded-[14px] bg-white text-[0.65rem] leading-none font-semibold uppercase tracking-[0.35em] text-primary">
       PF
     </span>
   </span>
@@ -71,9 +72,10 @@ export function TopNavigation() {
               >
                 {link.label}
               </Link>
-          );
-        })}
-      </nav>
+            );
+          })}
+          <LogoutButton className="px-3 py-1.5 text-[0.65rem] uppercase tracking-[0.35em]" />
+        </nav>
       </div>
     </header>
   );

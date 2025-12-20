@@ -1,45 +1,21 @@
-import { describe, expect, it, beforeEach, vi } from "vitest";
-import { NextResponse } from "next/server";
+import { describe, expect, it, beforeAll, beforeEach, vi } from "vitest";
 import { Prisma } from "@prisma/client";
 
 import {
-  authorizeRequestMock,
-  ensureDemoUserMock,
   plaidClientMock,
   prismaMock,
   refreshAccountBalancesMock,
   resetMocks,
 } from "./test-utils/mocks";
+import { defaultTestSession, setTestSession } from "./test-utils/test-session";
 
-import { GET as accountsGET } from "@/app/api/accounts/route";
-import { GET as transactionsGET } from "@/app/api/transactions/route";
-import { POST as transactionsSyncPOST } from "@/app/api/transactions/sync/route";
-import { GET as transactionsSummaryGET } from "@/app/api/transactions/summary/route";
-import { PATCH as updateTransactionDescriptionPATCH } from "@/app/api/transactions/[transactionId]/description/route";
-import { GET as transactionsCategoriesGET } from "@/app/api/transactions/categories/route";
-import { POST as createLinkTokenPOST } from "@/app/api/plaid/create-link-token/route";
-import { POST as exchangePublicTokenPOST } from "@/app/api/plaid/exchange-public-token/route";
-import { POST as plaidWebhookPOST } from "@/app/api/plaid/webhook/route";
-import { GET as familyMembersGET, POST as familyMembersPOST } from "@/app/api/family-members/route";
 
 vi.mock("@/lib/prisma", () => ({
   prisma: prismaMock,
 }));
 
-vi.mock("@/lib/family-auth", () => ({
-  authorizeRequest: (...args: Parameters<typeof authorizeRequestMock>) =>
-    authorizeRequestMock(...args),
-  getFamilyHeaderValue: () => "family-dashboard-secret",
-}));
-
 vi.mock("@/lib/plaid", () => ({
   plaidClient: plaidClientMock,
-}));
-
-vi.mock("@/lib/demo-user", () => ({
-  DEMO_USER_ID: "demo-user",
-  ensureDemoUser: (...args: Parameters<typeof ensureDemoUserMock>) =>
-    ensureDemoUserMock(...args),
 }));
 
 vi.mock("@/lib/account-balances", () => ({
@@ -47,13 +23,51 @@ vi.mock("@/lib/account-balances", () => ({
     refreshAccountBalancesMock(...args),
 }));
 
+let accountsGET: typeof import("@/app/api/accounts/route").GET;
+let transactionsGET: typeof import("@/app/api/transactions/route").GET;
+let transactionsSyncPOST: typeof import("@/app/api/transactions/sync/route").POST;
+let transactionsSummaryGET: typeof import("@/app/api/transactions/summary/route").GET;
+let updateTransactionDescriptionPATCH: typeof import("@/app/api/transactions/[transactionId]/description/route").PATCH;
+let transactionsCategoriesGET: typeof import("@/app/api/transactions/categories/route").GET;
+let createLinkTokenPOST: typeof import("@/app/api/plaid/create-link-token/route").POST;
+let exchangePublicTokenPOST: typeof import("@/app/api/plaid/exchange-public-token/route").POST;
+let plaidWebhookPOST: typeof import("@/app/api/plaid/webhook/route").POST;
+let familyMembersGET: typeof import("@/app/api/family-members/route").GET;
+let familyMembersPOST: typeof import("@/app/api/family-members/route").POST;
+
+beforeAll(async () => {
+  const accountsModule = await import("@/app/api/accounts/route");
+  accountsGET = accountsModule.GET;
+  const transactionsModule = await import("@/app/api/transactions/route");
+  transactionsGET = transactionsModule.GET;
+  const transactionsSyncModule = await import("@/app/api/transactions/sync/route");
+  transactionsSyncPOST = transactionsSyncModule.POST;
+  const summaryModule = await import("@/app/api/transactions/summary/route");
+  transactionsSummaryGET = summaryModule.GET;
+  const descriptionModule = await import(
+    "@/app/api/transactions/[transactionId]/description/route",
+  );
+  updateTransactionDescriptionPATCH = descriptionModule.PATCH;
+  const categoriesModule = await import("@/app/api/transactions/categories/route");
+  transactionsCategoriesGET = categoriesModule.GET;
+  const createLinkTokenModule = await import(
+    "@/app/api/plaid/create-link-token/route",
+  );
+  createLinkTokenPOST = createLinkTokenModule.POST;
+  const exchangeModule = await import(
+    "@/app/api/plaid/exchange-public-token/route",
+  );
+  exchangePublicTokenPOST = exchangeModule.POST;
+  const webhookModule = await import("@/app/api/plaid/webhook/route");
+  plaidWebhookPOST = webhookModule.POST;
+  const familyMembersModule = await import("@/app/api/family-members/route");
+  familyMembersGET = familyMembersModule.GET;
+  familyMembersPOST = familyMembersModule.POST;
+});
+
 beforeEach(() => {
   resetMocks();
-  authorizeRequestMock.mockReturnValue({
-    ok: true,
-    token: "family-dashboard-secret",
-    userId: "demo-user",
-  });
+  setTestSession(defaultTestSession);
 });
 
 describe("accounts endpoint", () => {
@@ -99,19 +113,29 @@ describe("accounts endpoint", () => {
     ]);
   });
 
-  it("propagates family auth failures", async () => {
-    const denial = NextResponse.json({ error: "blocked" }, { status: 403 });
-    authorizeRequestMock.mockReturnValueOnce({ ok: false, response: denial });
+  it("responds with 401 when the session is missing", async () => {
+    setTestSession(null);
 
     const response = await accountsGET(
       new Request("http://localhost/api/accounts"),
     );
-    expect(response.status).toBe(403);
-    expect(await response.json()).toEqual({ error: "blocked" });
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({ error: "Unauthorized access" });
   });
 });
 
 describe("transactions listing", () => {
+  it("rejects unauthorized access", async () => {
+    setTestSession(null);
+
+    const response = await transactionsGET(
+      new Request("http://localhost/api/transactions"),
+    );
+
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({ error: "Unauthorized access" });
+  });
+
   it("fails when requested account is missing", async () => {
     prismaMock.account.findFirst.mockResolvedValue(null);
     prismaMock.account.findMany.mockResolvedValue([]);
@@ -234,6 +258,17 @@ describe("transactions listing", () => {
 });
 
 describe("transactions summary", () => {
+  it("requires authentication before summarizing data", async () => {
+    setTestSession(null);
+
+    const response = await transactionsSummaryGET(
+      new Request("http://localhost/api/transactions/summary"),
+    );
+
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({ error: "Unauthorized access" });
+  });
+
   it("aggregates spend and income via database aggregates", async () => {
     prismaMock.transaction.aggregate
       .mockImplementationOnce(async (args) => {
@@ -396,6 +431,17 @@ describe("transactions summary", () => {
 });
 
 describe("transactions categories", () => {
+  it("blocks category requests when unauthenticated", async () => {
+    setTestSession(null);
+
+    const response = await transactionsCategoriesGET(
+      new Request("http://localhost/api/transactions/categories"),
+    );
+
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({ error: "Unauthorized access" });
+  });
+
   it("returns the snapshot of normalized categories for the requested range", async () => {
     prismaMock.account.findMany.mockResolvedValue([
       { id: "account-1", bankItem: { userId: "demo-user" } },
@@ -432,6 +478,21 @@ describe("transactions categories", () => {
 });
 
 describe("transactions sync", () => {
+  it("blocks sync requests without authentication", async () => {
+    setTestSession(null);
+
+    const response = await transactionsSyncPOST(
+      new Request("http://localhost/api/transactions/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bankItemId: "bank-1" }),
+      }),
+    );
+
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({ error: "Unauthorized access" });
+  });
+
   it("fetches plaids transactions, skips existing entries, and reports counters", async () => {
     prismaMock.bankItem.findMany.mockResolvedValue([
       {
@@ -649,15 +710,26 @@ describe("transactions sync", () => {
 });
 
 describe("plaid endpoints", () => {
-  it("creates a link token after ensuring the demo user", async () => {
-    ensureDemoUserMock.mockResolvedValue({ id: "demo-user" });
+  it("creates a link token for the authenticated user", async () => {
     plaidClientMock.linkTokenCreate.mockResolvedValue({
       data: { link_token: "token-123" },
     });
 
     const response = await createLinkTokenPOST();
     expect(await response.json()).toEqual({ link_token: "token-123" });
-    expect(ensureDemoUserMock).toHaveBeenCalled();
+    expect(plaidClientMock.linkTokenCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        user: { client_user_id: "demo-user" },
+      }),
+    );
+  });
+
+  it("rejects link token creation without a session", async () => {
+    setTestSession(null);
+
+    const response = await createLinkTokenPOST();
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({ error: "Unauthorized access" });
   });
 
   it("validates the public token payload", async () => {
@@ -674,7 +746,6 @@ describe("plaid endpoints", () => {
   });
 
   it("exchanges tokens and upserts accounts", async () => {
-    ensureDemoUserMock.mockResolvedValue({ id: "demo-user" });
     plaidClientMock.itemPublicTokenExchange.mockResolvedValue({
       data: { access_token: "access-123", item_id: "item-123" },
     });
@@ -711,12 +782,33 @@ describe("plaid endpoints", () => {
     );
 
     expect(await response.json()).toEqual({ status: "ok" });
-    expect(prismaMock.bankItem.upsert).toHaveBeenCalled();
+    expect(prismaMock.bankItem.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({
+          userId: "demo-user",
+        }),
+      }),
+    );
     expect(prismaMock.account.upsert).toHaveBeenCalled();
     expect(refreshAccountBalancesMock).toHaveBeenCalledWith({
       bankItemId: "bank-1",
       accessToken: "access-123",
     });
+  });
+
+  it("rejects public token exchange without a session", async () => {
+    setTestSession(null);
+
+    const response = await exchangePublicTokenPOST(
+      new Request("http://localhost/api/plaid/exchange-public-token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ public_token: "token" }),
+      }),
+    );
+
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({ error: "Unauthorized access" });
   });
 
   it("acknowledges webhook payloads", async () => {
@@ -732,11 +824,36 @@ describe("plaid endpoints", () => {
   });
 });
 describe("transaction description updates", () => {
+  it("rejects description updates without authentication", async () => {
+    setTestSession(null);
+
+    const response = await updateTransactionDescriptionPATCH(
+      new Request("http://localhost/api/transactions/tx-123/description", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ description: "New note" }),
+      }),
+      { params: { transactionId: "tx-123" } },
+    );
+
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({ error: "Unauthorized access" });
+  });
+
   it("validates payload and updates the record", async () => {
     const mockUpdate = {
       id: "tx-123",
       description: "Updated note",
     };
+    prismaMock.transaction.findUnique.mockResolvedValue({
+      id: "tx-123",
+      description: "Old note",
+      account: {
+        bankItem: {
+          userId: "demo-user",
+        },
+      },
+    });
     prismaMock.transaction.update.mockResolvedValue(mockUpdate);
 
     const response = await updateTransactionDescriptionPATCH(
@@ -762,6 +879,15 @@ describe("transaction description updates", () => {
       id: "tx-123",
       description: null,
     });
+    prismaMock.transaction.findUnique.mockResolvedValue({
+      id: "tx-123",
+      description: "Old note",
+      account: {
+        bankItem: {
+          userId: "demo-user",
+        },
+      },
+    });
     const response = await updateTransactionDescriptionPATCH(
       new Request("http://localhost/api/transactions/tx-123/description", {
         method: "PATCH",
@@ -781,6 +907,32 @@ describe("transaction description updates", () => {
 });
 
 describe("family members endpoint", () => {
+  it("denies list requests when unauthenticated", async () => {
+    setTestSession(null);
+
+    const response = await familyMembersGET(
+      new Request("http://localhost/api/family-members"),
+    );
+
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({ error: "Unauthorized access" });
+  });
+
+  it("denies creation requests when unauthenticated", async () => {
+    setTestSession(null);
+
+    const response = await familyMembersPOST(
+      new Request("http://localhost/api/family-members", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: "yuki", displayName: "Yuki" }),
+      }),
+    );
+
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({ error: "Unauthorized access" });
+  });
+
   it("returns the configured members", async () => {
     prismaMock.user.findMany.mockResolvedValue([
       {

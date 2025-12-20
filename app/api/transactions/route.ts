@@ -1,8 +1,7 @@
 import { jsonErrorResponse } from "@/lib/api-response";
-import { DEMO_USER_ID } from "@/lib/demo-user";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { authorizeRequest } from "@/lib/family-auth";
+import { getAuthenticatedUser, unauthorizedResponse } from "@/lib/server/session";
 import {
   dropConfSuffix,
   getTransactionCategoryPath,
@@ -26,9 +25,9 @@ type TransactionRecord = Awaited<
 
 export async function GET(request: Request) {
   try {
-    const auth = authorizeRequest(request);
-    if (!auth.ok) {
-      return auth.response;
+    const user = await getAuthenticatedUser();
+    if (!user) {
+      return unauthorizedResponse();
     }
 
     const url = new URL(request.url);
@@ -69,7 +68,7 @@ export async function GET(request: Request) {
     const where: TransactionWhereInput = {
       account: {
         bankItem: {
-          userId: DEMO_USER_ID,
+          userId: user.id,
         },
       },
     };
@@ -82,9 +81,9 @@ export async function GET(request: Request) {
           id: {
             in: uniqueAccountIds,
           },
-          bankItem: {
-            userId: DEMO_USER_ID,
-          },
+        bankItem: {
+          userId: user.id,
+        },
         },
         select: {
           id: true,

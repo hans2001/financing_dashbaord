@@ -7,6 +7,7 @@
 ## What Changes
 - Introduce NextAuth (or a similar credentials-based session mechanism) backed by Prisma users so the team can manage per-user logins with hashed credentials, middleware guards, and logout flows.
 - Replace the current `FAMILY_AUTH_TOKEN` header/cookie gating with a NextAuth session that `app/dashboard/page.tsx` and all `api/*` routes require; unauthorized requests redirect to `/auth/login` or return 403.
+- Extend the gate to the Plaid onboarding experience so `/api/plaid/create-link-token`, `/api/plaid/exchange-public-token`, and the connect UI only run after a verified session, preventing random visitors from launching Link or using leaked tokens to access `/dashboard`.
 - Provide a `/auth/login` experience that lets an approved family member sign in, handles errors/redirects, and optionally seeds an initial user so the workflow works out of the box.
 
 ## Impact

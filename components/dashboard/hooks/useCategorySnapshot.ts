@@ -1,7 +1,6 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 
-import { FAMILY_AUTH_HEADERS } from "../dashboard-utils";
 import { getNormalizedAccountSelection } from "./useTransactionsData";
 
 type UseCategorySnapshotArgs = {
@@ -51,9 +50,6 @@ export function useCategorySnapshot({
 
       const response = await fetch(
         `/api/transactions/categories?${params.toString()}`,
-        {
-          headers: FAMILY_AUTH_HEADERS,
-        },
       );
       const payload = await response.json();
       if (!response.ok) {

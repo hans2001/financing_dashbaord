@@ -23,8 +23,6 @@ import { useDashboardFilters } from "./hooks/useDashboardFilters";
 
 type DashboardState = {
   accounts: Account[];
-  isLoadingAccounts: boolean;
-  accountsError: string | null;
   transactions: Transaction[];
   isLoadingTransactions: boolean;
   transactionsError: string | null;
@@ -61,8 +59,6 @@ type DashboardState = {
   activeLargestExpense: number;
   activeLargestIncome: number;
   isSyncing: boolean;
-  syncMessage: string | null;
-  showAccountsPanel: boolean;
   areFiltersCollapsed: boolean;
 };
 
@@ -82,13 +78,11 @@ type DashboardActions = {
   setFlowFilter: (value: FlowFilterValue) => void;
   setCategoryFilters: (value: string[]) => void;
   handleSync: () => Promise<void>;
-  setShowAccountsPanel: Dispatch<SetStateAction<boolean>>;
   setAreFiltersCollapsed: Dispatch<SetStateAction<boolean>>;
 };
 
 export function useDashboardState(): DashboardState & DashboardActions {
-  const { refreshKey, handleSync, isSyncing, syncMessage } = useSyncControls();
-  const [showAccountsPanel, setShowAccountsPanel] = useState(false);
+  const { refreshKey, handleSync, isSyncing } = useSyncControls();
   const queryClient = useQueryClient();
   const [areFiltersCollapsed, setAreFiltersCollapsed] = useState(true);
   const {
@@ -114,8 +108,6 @@ export function useDashboardState(): DashboardState & DashboardActions {
 
   const {
     accounts,
-    isLoadingAccounts,
-    accountsError,
   } = useAccountsData({ refreshKey });
 
   const {
@@ -367,8 +359,6 @@ export function useDashboardState(): DashboardState & DashboardActions {
 
   return {
     accounts,
-    isLoadingAccounts,
-    accountsError,
     transactions,
     isLoadingTransactions,
     transactionsError,
@@ -404,10 +394,8 @@ export function useDashboardState(): DashboardState & DashboardActions {
     activeIncomeCount,
     activeLargestExpense,
     activeLargestIncome,
-    showAccountsPanel,
     areFiltersCollapsed,
     isSyncing,
-    syncMessage,
     handleDescriptionSaved,
     toggleSelectRow,
     toggleSelectPage,
@@ -423,7 +411,6 @@ export function useDashboardState(): DashboardState & DashboardActions {
     setFlowFilter,
     setCategoryFilters,
     handleSync,
-    setShowAccountsPanel,
     setAreFiltersCollapsed,
   };
 }

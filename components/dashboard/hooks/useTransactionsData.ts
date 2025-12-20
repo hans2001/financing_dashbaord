@@ -1,7 +1,6 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 
-import { FAMILY_AUTH_HEADERS } from "../dashboard-utils";
 import type { Transaction } from "../types";
 import type { FlowFilterValue, SortOptionValue } from "../dashboard-utils";
 
@@ -150,9 +149,7 @@ export function useTransactionsData({
         categoryFilters,
       });
 
-      const response = await fetch(`/api/transactions?${params.toString()}`, {
-        headers: FAMILY_AUTH_HEADERS,
-      });
+      const response = await fetch(`/api/transactions?${params.toString()}`);
       const payload = await response.json();
       if (!response.ok) {
         throw new Error(payload?.error ?? "Unable to load transactions");

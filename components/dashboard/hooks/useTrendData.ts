@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 
-import { FAMILY_AUTH_HEADERS } from "../dashboard-utils";
 import type { FlowFilterValue } from "../dashboard-utils";
 import { getNormalizedAccountSelection } from "./useTransactionsData";
 
@@ -112,9 +111,7 @@ export function useTrendData({
         categoryFilters: normalizedCategories,
       });
 
-      const response = await fetch(`/api/transactions/trends?${params.toString()}`, {
-        headers: FAMILY_AUTH_HEADERS,
-      });
+      const response = await fetch(`/api/transactions/trends?${params.toString()}`);
       const payload = await response.json();
       if (!response.ok) {
         throw new Error(payload?.error ?? "Unable to load trend data");

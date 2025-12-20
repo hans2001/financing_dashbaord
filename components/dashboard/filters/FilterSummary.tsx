@@ -39,14 +39,14 @@ export function FilterSummary({
   const dateLabel = useMemo(() => formatDateRangeLabel(dateRange), [dateRange]);
 
   return (
-    <div className="flex items-center justify-between gap-4 py-3">
-      <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50/80 px-3 py-0.5 text-sm font-semibold text-slate-900 shadow-sm shadow-slate-900/5">
+    <div className="flex items-center justify-between gap-2 py-2 text-[0.55rem]">
+      <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50/80 px-2 py-0.5 text-[0.65rem] font-semibold text-slate-900 shadow-sm shadow-slate-900/5">
         {dateLabel}
       </span>
       <div className="flex items-center gap-2">
         <button
           type="button"
-          className="text-[0.55rem] font-semibold uppercase tracking-[0.35em] text-slate-500 transition hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+          className="text-[0.5rem] font-semibold uppercase tracking-[0.25em] text-slate-500 transition hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
           onClick={onClearFilters}
           disabled={!hasActiveFilters}
         >
@@ -54,7 +54,7 @@ export function FilterSummary({
         </button>
         <button
           type="button"
-          className="text-[0.55rem] font-semibold uppercase tracking-[0.35em] text-slate-700 transition hover:text-slate-900"
+          className="text-[0.5rem] font-semibold uppercase tracking-[0.25em] text-slate-700 transition hover:text-slate-900"
           onClick={onToggleCollapsed}
           aria-controls={detailTrayId}
           aria-expanded={!isCollapsed}

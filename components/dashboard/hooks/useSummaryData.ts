@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 
-import { FAMILY_AUTH_HEADERS } from "../dashboard-utils";
 import type { SummaryResponse } from "../types";
 
 type SummaryArgs = {
@@ -65,12 +64,7 @@ export function useSummaryData({
         params.append("category", category);
       });
 
-      const response = await fetch(
-        `/api/transactions/summary?${params.toString()}`,
-        {
-          headers: FAMILY_AUTH_HEADERS,
-        },
-      );
+      const response = await fetch(`/api/transactions/summary?${params.toString()}`);
       const payload = await response.json();
       if (!response.ok) {
         throw new Error(payload?.error ?? "Unable to load summary");

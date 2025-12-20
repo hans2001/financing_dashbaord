@@ -10,7 +10,7 @@ This app gives Hans, Yuki, and anyone they invite a single pane that mixes Plaid
 
 ## Getting started
 
-1. Copy `.env.example` to `.env.local`, fill in Plaid credentials (client ID, secret, webhook URL if used), `APP_BASE_URL`, and any database secrets. `PLAID_TRANSACTIONS_DAYS_REQUESTED` defaults to `730` but can be tuned before linking to request up to two years of history.
+1. Copy `.env.example` to `.env.local`, fill in Plaid credentials (client ID, secret, webhook URL if used), `APP_BASE_URL`, `NEXTAUTH_SECRET`, and any database secrets. `PLAID_TRANSACTIONS_DAYS_REQUESTED` defaults to `730` but can be tuned before linking to request up to two years of history.
 2. Install dependencies (`npm install`) and point Plaid Link at your local app via a secure tunnel (`ngrok http 3000`); update the base URL (`npm run set-base-url https://<tunnel>.ngrok.io`) and start the dev server (`npm run dev:no-hmr`).
 3. Visit `/connect`, complete the Plaid flow, and return to `/dashboard`. Use the filters/insights panel to explore ranges, flow types, and sorting controls.
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useState } from "react";
+import { memo } from "react";
 import {
   FlowFilterValue,
   formatCurrency,
@@ -8,12 +8,6 @@ import {
 } from "./dashboard-utils";
 import type { TrendBucket } from "./hooks/useTrendData";
 import { TrendLinePanel } from "./TrendLinePanel";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
 
 type SummaryPanelProps = {
   activeSpentTotal: number;
@@ -48,6 +42,33 @@ type CategoryPieProps = {
   categoryEmptyMessage: string;
 };
 
+const PIE_LEGEND_LIMIT = 5;
+const OTHER_CATEGORY_LABEL = "Other";
+
+export const getLegendCategories = (
+  categories: [string, number][],
+  maxEntries = PIE_LEGEND_LIMIT,
+): [string, number][] => {
+  const cap = Math.max(1, maxEntries);
+  if (categories.length <= cap) {
+    return categories;
+  }
+  const availableSlots = cap - 1;
+  if (availableSlots <= 0) {
+    return categories.slice(0, cap);
+  }
+  const topCategories = categories.slice(0, availableSlots);
+  const remainingCategories = categories.slice(availableSlots);
+  const remainingTotal = remainingCategories.reduce(
+    (sum, [, value]) => sum + value,
+    0,
+  );
+  if (remainingTotal <= 0) {
+    return categories.slice(0, cap);
+  }
+  return [...topCategories, [OTHER_CATEGORY_LABEL, remainingTotal]];
+};
+
 export const getPieCategories = (
   categoriesToShow: [string, number][],
 ): [string, number][] =>
@@ -60,12 +81,14 @@ const CategoryPie = ({ categoriesToShow, categoryEmptyMessage }: CategoryPieProp
     );
   }
   const pieCategories = getPieCategories(categoriesToShow);
-  const total =
-    pieCategories.reduce<number>((sum, [, value]) => sum + value, 0) || 1;
+  const pieTotal =
+    pieCategories.reduce<number>((sum, [, value]) => sum + value, 0);
+  const total = pieTotal || 1;
+  const displayCategories = getLegendCategories(pieCategories);
 
   const segments: PieSegment[] = [];
   let offset = 0;
-  pieCategories.forEach(([label, value]) => {
+  displayCategories.forEach(([label, value]) => {
     const percent = value / total;
     const start = offset;
     const end = start + percent * 100;
@@ -82,14 +105,14 @@ const CategoryPie = ({ categoriesToShow, categoryEmptyMessage }: CategoryPieProp
   });
 
   return (
-    <div className="mt-3 flex flex-col items-center gap-3 text-center">
+    <div className="flex flex-col items-center gap-3 text-center">
       <div className="relative h-36 w-36">
         <div
           className="h-full w-full rounded-full"
           style={{
             backgroundImage: `conic-gradient(${segments
               .map((segment) => `${segment.color} ${segment.start}% ${segment.end}%`)
-              .join(", ")})`,
+            .join(", ")})`,
           }}
         />
         <div className="absolute inset-7 flex flex-col items-center justify-center rounded-full bg-white text-center">
@@ -97,11 +120,11 @@ const CategoryPie = ({ categoriesToShow, categoryEmptyMessage }: CategoryPieProp
             Total
           </span>
           <span className="text-sm font-semibold text-slate-900">
-            {formatCurrency(pieCategories.reduce((sum, [, value]) => sum + value, 0))}
+            {formatCurrency(pieTotal)}
           </span>
         </div>
       </div>
-      <div className="flex flex-col items-center gap-1 text-[0.7rem] text-slate-600 md:flex-row md:flex-wrap md:items-center md:gap-2">
+      <div className="grid w-full grid-cols-1 gap-2 text-[0.7rem] text-slate-600 md:grid-cols-2">
         {segments.map((segment) => (
           <div
             key={segment.label}
@@ -142,9 +165,6 @@ function SummaryPanelComponent({
   flowFilter,
   categoryFilters,
 }: SummaryPanelProps) {
-  const [activeTab, setActiveTab] = useState<"categories" | "trend">(
-    "categories",
-  );
   return (
     <div className="flex min-w-0 flex-col gap-2 h-full">
       <div className="rounded-lg border border-slate-200 bg-white p-2 shadow-sm shadow-slate-900/5">
@@ -218,46 +238,24 @@ function SummaryPanelComponent({
           </div>
         </dl>
       </div>
-      <div className="rounded-lg border border-slate-200 bg-white p-2 shadow-sm shadow-slate-900/5 flex flex-col h-[16rem]">
-        <Tabs
-          value={activeTab}
-          onValueChange={(value) => setActiveTab(value as "categories" | "trend")}
-          className="flex flex-col h-full space-y-1"
-        >
-          <div className="flex items-center justify-between">
-            <p className="text-[0.55rem] uppercase tracking-[0.3em] text-slate-400">
-              {activeTab === "categories" ? "Top categories" : "Spending trend"}
-            </p>
-            <TabsList className="flex w-fit justify-end gap-0.5 rounded-xl bg-white px-0.5 py-0 text-[0.55rem] h-auto">
-              <TabsTrigger
-                value="categories"
-                className="px-1 py-0 text-[0.45rem] font-semibold uppercase tracking-[0.3em]"
-              >
-                Cats
-              </TabsTrigger>
-              <TabsTrigger
-                value="trend"
-                className="px-1 py-0 text-[0.45rem] font-semibold uppercase tracking-[0.3em]"
-              >
-                Trend
-              </TabsTrigger>
-            </TabsList>
-          </div>
-          <TabsContent
-            value="categories"
-            className="flex flex-col flex-1 pt-1"
-          >
-            <div className="flex flex-1 flex-col items-center justify-center">
-              <CategoryPie
-                categoriesToShow={categoriesToShow}
-                categoryEmptyMessage={categoryEmptyMessage}
-              />
-            </div>
-          </TabsContent>
-          <TabsContent
-            value="trend"
-            className="flex flex-col flex-1 pt-1"
-          >
+      <div
+        className="grid h-[16rem] gap-2"
+        style={{ gridTemplateRows: "auto 1fr" }}
+      >
+        <div className="rounded-lg border border-slate-200 bg-white p-2 shadow-sm shadow-slate-900/5 flex flex-col gap-2 h-full">
+          <p className="text-[0.55rem] uppercase tracking-[0.3em] text-slate-400">
+            Top categories
+          </p>
+          <CategoryPie
+            categoriesToShow={categoriesToShow}
+            categoryEmptyMessage={categoryEmptyMessage}
+          />
+        </div>
+        <div className="rounded-lg border border-slate-200 bg-white p-2 shadow-sm shadow-slate-900/5 flex flex-col gap-2">
+          <p className="text-[0.55rem] uppercase tracking-[0.3em] text-slate-400">
+            Spending trend
+          </p>
+          <div className="flex flex-1 min-h-[9rem] w-full">
             <TrendLinePanel
               buckets={trendBuckets}
               isLoading={isLoadingTrend}
@@ -266,8 +264,8 @@ function SummaryPanelComponent({
               flowFilter={flowFilter}
               categoryFilters={categoryFilters}
             />
-          </TabsContent>
-        </Tabs>
+          </div>
+        </div>
       </div>
     </div>
   );
