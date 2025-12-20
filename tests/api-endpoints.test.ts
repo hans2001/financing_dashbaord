@@ -29,6 +29,7 @@ let transactionsSyncPOST: typeof import("@/app/api/transactions/sync/route").POS
 let transactionsSummaryGET: typeof import("@/app/api/transactions/summary/route").GET;
 let updateTransactionDescriptionPATCH: typeof import("@/app/api/transactions/[transactionId]/description/route").PATCH;
 let transactionsCategoriesGET: typeof import("@/app/api/transactions/categories/route").GET;
+let transactionsTrendsGET: typeof import("@/app/api/transactions/trends/route").GET;
 let createLinkTokenPOST: typeof import("@/app/api/plaid/create-link-token/route").POST;
 let exchangePublicTokenPOST: typeof import("@/app/api/plaid/exchange-public-token/route").POST;
 let plaidWebhookPOST: typeof import("@/app/api/plaid/webhook/route").POST;
@@ -50,6 +51,8 @@ beforeAll(async () => {
   updateTransactionDescriptionPATCH = descriptionModule.PATCH;
   const categoriesModule = await import("@/app/api/transactions/categories/route");
   transactionsCategoriesGET = categoriesModule.GET;
+  const trendsModule = await import("@/app/api/transactions/trends/route");
+  transactionsTrendsGET = trendsModule.GET;
   const createLinkTokenModule = await import(
     "@/app/api/plaid/create-link-token/route",
   );
@@ -134,6 +137,28 @@ describe("transactions listing", () => {
 
     expect(response.status).toBe(401);
     expect(await response.json()).toEqual({ error: "Unauthorized access" });
+  });
+
+  it("rejects invalid startDate values", async () => {
+    const response = await transactionsGET(
+      new Request(
+        "http://localhost/api/transactions?startDate=2024-99-99",
+      ),
+    );
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: "Invalid startDate" });
+  });
+
+  it("rejects invalid endDate values", async () => {
+    const response = await transactionsGET(
+      new Request(
+        "http://localhost/api/transactions?endDate=2024-99-99",
+      ),
+    );
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: "Invalid endDate" });
   });
 
   it("fails when requested account is missing", async () => {
@@ -267,6 +292,28 @@ describe("transactions summary", () => {
 
     expect(response.status).toBe(401);
     expect(await response.json()).toEqual({ error: "Unauthorized access" });
+  });
+
+  it("rejects invalid startDate values", async () => {
+    const response = await transactionsSummaryGET(
+      new Request(
+        "http://localhost/api/transactions/summary?startDate=2024-99-99",
+      ),
+    );
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: "Invalid startDate" });
+  });
+
+  it("rejects invalid endDate values", async () => {
+    const response = await transactionsSummaryGET(
+      new Request(
+        "http://localhost/api/transactions/summary?endDate=2024-99-99",
+      ),
+    );
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: "Invalid endDate" });
   });
 
   it("aggregates spend and income via database aggregates", async () => {
@@ -442,6 +489,28 @@ describe("transactions categories", () => {
     expect(await response.json()).toEqual({ error: "Unauthorized access" });
   });
 
+  it("rejects invalid startDate values", async () => {
+    const response = await transactionsCategoriesGET(
+      new Request(
+        "http://localhost/api/transactions/categories?startDate=2024-99-99",
+      ),
+    );
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: "Invalid startDate" });
+  });
+
+  it("rejects invalid endDate values", async () => {
+    const response = await transactionsCategoriesGET(
+      new Request(
+        "http://localhost/api/transactions/categories?endDate=2024-99-99",
+      ),
+    );
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: "Invalid endDate" });
+  });
+
   it("returns the snapshot of normalized categories for the requested range", async () => {
     prismaMock.account.findMany.mockResolvedValue([
       { id: "account-1", bankItem: { userId: "demo-user" } },
@@ -474,6 +543,30 @@ describe("transactions categories", () => {
 
     expect(response.status).toBe(400);
     expect(await response.json()).toEqual({ error: "Account filter not found" });
+  });
+});
+
+describe("transactions trends", () => {
+  it("rejects invalid startDate values", async () => {
+    const response = await transactionsTrendsGET(
+      new Request(
+        "http://localhost/api/transactions/trends?startDate=2024-99-99",
+      ),
+    );
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: "Invalid startDate" });
+  });
+
+  it("rejects invalid endDate values", async () => {
+    const response = await transactionsTrendsGET(
+      new Request(
+        "http://localhost/api/transactions/trends?endDate=2024-99-99",
+      ),
+    );
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: "Invalid endDate" });
   });
 });
 

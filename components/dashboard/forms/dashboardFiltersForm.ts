@@ -20,7 +20,6 @@ const PAGE_SIZE_STRING_VALUES = [
   "100",
   "250",
   "500",
-  "1000",
   "all",
 ] as const;
 

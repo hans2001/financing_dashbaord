@@ -2,6 +2,7 @@ import { jsonErrorResponse } from "@/lib/api-response";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { getAuthenticatedUser, unauthorizedResponse } from "@/lib/server/session";
+import { parseTransactionsQuery } from "@/app/api/transactions/query";
 
 type TransactionWhereInput = NonNullable<
   Parameters<typeof prisma.transaction.findMany>[0]
@@ -14,12 +15,10 @@ export async function GET(request: Request) {
       return unauthorizedResponse();
     }
 
-    const url = new URL(request.url);
-    const accountIds = url
-      .searchParams.getAll("accountId")
-      .filter(Boolean);
-    const startDate = url.searchParams.get("startDate");
-    const endDate = url.searchParams.get("endDate");
+    const { data, error } = await parseTransactionsQuery(request, user.id);
+    if (error) {
+      return error;
+    }
 
     const where: TransactionWhereInput = {
       account: {
@@ -29,40 +28,19 @@ export async function GET(request: Request) {
       },
     };
 
-    const filteredAccountIds = accountIds.filter((id) => id !== "all");
-    if (filteredAccountIds.length > 0) {
-      const uniqueAccountIds = Array.from(new Set(filteredAccountIds));
-      const validatedAccounts = await prisma.account.findMany({
-        where: {
-          id: {
-            in: uniqueAccountIds,
-          },
-          bankItem: {
-            userId: user.id,
-          },
-        },
-        select: {
-          id: true,
-        },
-      });
-      if (validatedAccounts.length !== uniqueAccountIds.length) {
-        return NextResponse.json(
-          { error: "Account filter not found" },
-          { status: 400 },
-        );
-      }
+    if (data.accountIds.length > 0) {
       where.accountId = {
-        in: uniqueAccountIds,
+        in: data.accountIds,
       };
     }
 
-    if (startDate || endDate) {
+    if (data.startDate || data.endDate) {
       where.date = {};
-      if (startDate) {
-        where.date.gte = new Date(startDate);
+      if (data.startDate) {
+        where.date.gte = data.startDate;
       }
-      if (endDate) {
-        where.date.lte = new Date(endDate);
+      if (data.endDate) {
+        where.date.lte = data.endDate;
       }
     }
 

@@ -238,10 +238,7 @@ function SummaryPanelComponent({
           </div>
         </dl>
       </div>
-      <div
-        className="grid h-[16rem] gap-2"
-        style={{ gridTemplateRows: "auto 1fr" }}
-      >
+      <div className="flex min-w-0 flex-col gap-2">
         <div className="rounded-lg border border-slate-200 bg-white p-2 shadow-sm shadow-slate-900/5 flex flex-col gap-2 h-full">
           <p className="text-[0.55rem] uppercase tracking-[0.3em] text-slate-400">
             Top categories
@@ -255,16 +252,14 @@ function SummaryPanelComponent({
           <p className="text-[0.55rem] uppercase tracking-[0.3em] text-slate-400">
             Spending trend
           </p>
-          <div className="flex flex-1 min-h-[9rem] w-full">
-            <TrendLinePanel
-              buckets={trendBuckets}
-              isLoading={isLoadingTrend}
-              error={trendError}
-              dateRange={dateRange}
-              flowFilter={flowFilter}
-              categoryFilters={categoryFilters}
-            />
-          </div>
+          <TrendLinePanel
+            buckets={trendBuckets}
+            isLoading={isLoadingTrend}
+            error={trendError}
+            dateRange={dateRange}
+            flowFilter={flowFilter}
+            categoryFilters={categoryFilters}
+          />
         </div>
       </div>
     </div>

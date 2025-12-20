@@ -2,9 +2,11 @@
 
 import { forwardRef, useMemo } from "react";
 import {
+  Area,
   CartesianGrid,
   Line,
   LineChart,
+  ReferenceDot,
   ResponsiveContainer,
   Tooltip,
   TooltipContentProps,
@@ -47,24 +49,31 @@ const TrendTooltip = ({
   }
   const labelValue = label ?? bucket.date;
   return (
-    <div className="rounded-lg border border-slate-200 bg-white/90 p-2 text-[0.65rem] text-slate-700 shadow-md shadow-slate-900/10">
+    <div className="rounded-lg border border-slate-200 bg-white/90 p-2 text-[0.6rem] text-slate-700 shadow-md shadow-slate-900/10">
       <div className="text-[0.55rem] uppercase tracking-[0.35em] text-slate-500">
         {formatShortDate(String(labelValue))}
       </div>
-      <div className="text-sm font-semibold text-slate-900">
+      <div className="text-[0.75rem] font-semibold text-slate-900">
         Spent {formatCurrency(bucket.spent)}
       </div>
-      <div className="text-[0.6rem] text-slate-400">That day</div>
+      <div className="text-[0.55rem] text-slate-400">That day</div>
     </div>
   );
 };
 
 const TrendChart = ({ data }: { data: TrendChartPoint[] }) => {
+  const latestPoint = data[data.length - 1];
   return (
-    <ResponsiveContainer width="100%" height="100%">
-      <LineChart data={data} margin={{ top: 4, right: 12, left: 0, bottom: 4 }}>
+    <ResponsiveContainer width="100%" height="100%" minHeight={140} minWidth={0}>
+      <LineChart data={data} margin={{ top: 4, right: 16, left: 4, bottom: 4 }}>
+        <defs>
+          <linearGradient id="trend-area-fill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={TREND_COLORS.spending} stopOpacity={0.35} />
+            <stop offset="100%" stopColor={TREND_COLORS.spending} stopOpacity={0} />
+          </linearGradient>
+        </defs>
         <CartesianGrid
-          stroke="#e2e8f0"
+          stroke="#eef2f7"
           strokeDasharray="3 3"
           vertical={false}
         />
@@ -75,15 +84,21 @@ const TrendChart = ({ data }: { data: TrendChartPoint[] }) => {
           interval="preserveStartEnd"
           tickFormatter={formatShortDate}
           padding={{ left: 0, right: 0 }}
-          tick={{ fontSize: 10, fill: "#94a3b8" }}
+          tick={{ fontSize: 9, fill: "#94a3b8" }}
         />
         <YAxis
           axisLine={false}
           tickLine={false}
           tickFormatter={(value) => formatCurrency(value)}
           width={60}
-          tick={{ fontSize: 10, fill: "#94a3b8" }}
+          tick={{ fontSize: 9, fill: "#94a3b8" }}
           domain={[0, "dataMax"]}
+        />
+        <Area
+          dataKey="cumulativeSpent"
+          stroke="none"
+          fill="url(#trend-area-fill)"
+          isAnimationActive={false}
         />
         <Tooltip
           content={(tooltipProps) => <TrendTooltip {...tooltipProps} />}
@@ -93,10 +108,27 @@ const TrendChart = ({ data }: { data: TrendChartPoint[] }) => {
           type="monotone"
           dataKey="cumulativeSpent"
           stroke={TREND_COLORS.spending}
-          strokeWidth={2}
+          strokeWidth={3}
+          strokeLinecap="round"
           dot={false}
           isAnimationActive={false}
+          activeDot={{
+            stroke: "#ffffff",
+            strokeWidth: 2,
+            fill: TREND_COLORS.spending,
+            r: 4,
+          }}
         />
+        {latestPoint && (
+          <ReferenceDot
+            x={latestPoint.date}
+            y={latestPoint.cumulativeSpent}
+            r={5}
+            stroke="#ffffff"
+            strokeWidth={2}
+            fill={TREND_COLORS.spending}
+          />
+        )}
       </LineChart>
     </ResponsiveContainer>
   );
@@ -188,19 +220,13 @@ export const TrendLinePanel = forwardRef<HTMLDivElement, TrendLinePanelProps>(
         </div>
       );
     }
-    const latestBucket = buckets[buckets.length - 1]!;
     const totalSpent = cumulativeData[cumulativeData.length - 1]?.cumulativeSpent ?? 0;
     return (
-      <div ref={ref} className="flex flex-col gap-3 h-full min-h-0">
-        <div className="flex-1 min-h-0 overflow-hidden rounded-md border border-slate-100 bg-slate-50/60 p-2">
+      <div ref={ref} className="flex min-w-0 flex-col gap-3">
+        <div className="h-[13rem] min-w-0 w-full overflow-hidden rounded-md border border-slate-100 bg-slate-50/60 p-1">
           <TrendChart data={cumulativeData} />
         </div>
         <div className="flex flex-wrap gap-3">
-          <TrendLegend
-            color={TREND_COLORS.spending}
-            label="Spent today"
-            value={latestBucket?.spent ?? 0}
-          />
           <TrendLegend
             color={TREND_COLORS.spending}
             label="Cumulative spent"

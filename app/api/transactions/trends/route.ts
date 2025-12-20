@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { decimalToNumber } from "@/app/api/transactions/utils";
 import { Prisma } from "@prisma/client";
 import { getAuthenticatedUser, unauthorizedResponse } from "@/lib/server/session";
+import { parseTransactionsQuery } from "@/app/api/transactions/query";
 
 type TrendBucket = {
   date: string;
@@ -16,15 +17,6 @@ type TrendResponse = {
   buckets: TrendBucket[];
 };
 
-const normalizeCategoryFilters = (rawValues: string[]) =>
-  Array.from(
-    new Set(
-      rawValues
-        .map((value) => value?.trim())
-        .filter(Boolean),
-    ),
-  );
-
 export async function GET(request: Request) {
   try {
     const user = await getAuthenticatedUser();
@@ -32,59 +24,39 @@ export async function GET(request: Request) {
       return unauthorizedResponse();
     }
 
-    const url = new URL(request.url);
-    const accountIds = url.searchParams.getAll("accountId").filter(Boolean);
-    const startDate = url.searchParams.get("startDate");
-    const endDate = url.searchParams.get("endDate");
-    const categoryParams = normalizeCategoryFilters(
-      url.searchParams.getAll("category"),
-    );
-    const flow = url.searchParams.get("flow") ?? "all";
+    const { data, error } = await parseTransactionsQuery(request, user.id, {
+      includeFlow: true,
+    });
+    if (error) {
+      return error;
+    }
+    const flow = data.flow ?? "all";
 
     const whereConditions: Prisma.Sql[] = [
       Prisma.sql`b."userId" = ${user.id}`,
     ];
 
-    const filteredAccountIds = accountIds.filter((id) => id !== "all");
-    if (filteredAccountIds.length > 0) {
-      const uniqueAccountIds = Array.from(new Set(filteredAccountIds));
-      const validatedAccounts = await prisma.account.findMany({
-        where: {
-          id: { in: uniqueAccountIds },
-        bankItem: {
-          userId: user.id,
-        },
-        },
-        select: {
-          id: true,
-        },
-      });
-      if (validatedAccounts.length !== uniqueAccountIds.length) {
-        return NextServerResponse.json(
-          { error: "Account filter not found" },
-          { status: 400 },
-        );
-      }
+    if (data.accountIds.length > 0) {
       whereConditions.push(
         Prisma.sql`a.id IN (${Prisma.join(
-          uniqueAccountIds.map((accountId) => Prisma.sql`${accountId}`),
+          data.accountIds.map((accountId) => Prisma.sql`${accountId}`),
         )})`,
       );
     }
 
-    if (startDate) {
+    if (data.startDate) {
       whereConditions.push(
-        Prisma.sql`"t"."date" >= ${new Date(startDate)}`,
+        Prisma.sql`"t"."date" >= ${data.startDate}`,
       );
     }
-    if (endDate) {
-      whereConditions.push(Prisma.sql`"t"."date" <= ${new Date(endDate)}`);
+    if (data.endDate) {
+      whereConditions.push(Prisma.sql`"t"."date" <= ${data.endDate}`);
     }
 
-    if (categoryParams.length > 0) {
+    if (data.categories.length > 0) {
       whereConditions.push(
         Prisma.sql`"t"."normalizedCategory" IN (${Prisma.join(
-          categoryParams.map((category) => Prisma.sql`${category}`),
+          data.categories.map((category) => Prisma.sql`${category}`),
         )})`,
       );
     }

@@ -3,24 +3,12 @@ import { NextResponse } from "next/server";
 import { jsonErrorResponse } from "@/lib/api-response";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUser, unauthorizedResponse } from "@/lib/server/session";
-import type { Prisma } from "@prisma/client";
+import { decimalToNumber } from "@/app/api/transactions/utils";
+import { parseTransactionsQuery } from "@/app/api/transactions/query";
 
 type TransactionWhereInput = NonNullable<
   Parameters<typeof prisma.transaction.findMany>[0]
 >["where"];
-
-const decimalToNumber = (value?: Prisma.Decimal | null) => {
-  if (value === null || value === undefined) {
-    return 0;
-  }
-  if (typeof value === "number") {
-    return value;
-  }
-  if (typeof value.toNumber === "function") {
-    return value.toNumber();
-  }
-  return Number(value);
-};
 
 type SummaryResponse = {
   totalSpent: number;
@@ -40,17 +28,10 @@ export async function GET(request: Request) {
       return unauthorizedResponse();
     }
 
-    const url = new URL(request.url);
-    const accountIds = url
-      .searchParams.getAll("accountId")
-      .filter(Boolean);
-    const startDate = url.searchParams.get("startDate");
-    const endDate = url.searchParams.get("endDate");
-    const categoryParams = url
-      .searchParams
-      .getAll("category")
-      .map((value) => value?.trim())
-      .filter(Boolean);
+    const { data, error } = await parseTransactionsQuery(request, user.id);
+    if (error) {
+      return error;
+    }
     const where: TransactionWhereInput = {
       account: {
         bankItem: {
@@ -59,51 +40,25 @@ export async function GET(request: Request) {
       },
     };
 
-    const filteredAccountIds = accountIds.filter((id) => id !== "all");
-    if (filteredAccountIds.length > 0) {
-      const uniqueAccountIds = Array.from(new Set(filteredAccountIds));
-      const validatedAccounts = await prisma.account.findMany({
-        where: {
-          id: {
-            in: uniqueAccountIds,
-          },
-          bankItem: {
-            userId: user.id,
-          },
-        },
-        select: {
-          id: true,
-        },
-      });
-      if (validatedAccounts.length !== uniqueAccountIds.length) {
-        return NextResponse.json(
-          { error: "Account filter not found" },
-          { status: 400 },
-        );
-      }
+    if (data.accountIds.length > 0) {
       where.accountId = {
-        in: uniqueAccountIds,
+        in: data.accountIds,
       };
     }
 
-    if (startDate || endDate) {
+    if (data.startDate || data.endDate) {
       where.date = {};
-      if (startDate) {
-        where.date.gte = new Date(startDate);
+      if (data.startDate) {
+        where.date.gte = data.startDate;
       }
-      if (endDate) {
-        where.date.lte = new Date(endDate);
+      if (data.endDate) {
+        where.date.lte = data.endDate;
       }
     }
 
-    const normalizedCategoryFilters = Array.from(
-      new Set(
-        categoryParams.filter((value) => value !== "all"),
-      ),
-    );
-    if (normalizedCategoryFilters.length > 0) {
+    if (data.categories.length > 0) {
       where.normalizedCategory = {
-        in: normalizedCategoryFilters,
+        in: data.categories,
       };
     }
 
