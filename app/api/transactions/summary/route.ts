@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { jsonErrorResponse } from "@/lib/api-response";
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUser, unauthorizedResponse } from "@/lib/server/session";
-import { decimalToNumber } from "@/app/api/transactions/utils";
+import { decimalToNumber, type DecimalLike } from "@/app/api/transactions/utils";
 import { parseTransactionsQuery } from "@/app/api/transactions/query";
 
 type TransactionWhereInput = NonNullable<
@@ -101,7 +101,15 @@ export async function GET(request: Request) {
       }),
     ]);
 
-    const categoryTotals = spendCategoryGroups.reduce<Record<string, number>>(
+    type CategoryGroup = {
+      normalizedCategory: string | null;
+      _sum: { amount: DecimalLike | null };
+    };
+
+    const spendGroups = spendCategoryGroups as CategoryGroup[];
+    const incomeGroups = incomeCategoryGroups as CategoryGroup[];
+
+    const categoryTotals = spendGroups.reduce<Record<string, number>>(
       (collector, group) => {
         const label = group.normalizedCategory ?? "Uncategorized";
         const sum = Math.abs(decimalToNumber(group._sum.amount));
@@ -113,7 +121,7 @@ export async function GET(request: Request) {
       },
       {},
     );
-    const incomeCategoryTotals = incomeCategoryGroups.reduce<
+    const incomeCategoryTotals = incomeGroups.reduce<
       Record<string, number>
     >((collector, group) => {
       const label = group.normalizedCategory ?? "Uncategorized";

@@ -52,7 +52,9 @@ export async function GET(request: Request) {
       },
     });
 
-    const categories = categoryGroups
+    const categories = (categoryGroups as Array<{
+      normalizedCategory: string | null;
+    }>)
       .map((group) => group.normalizedCategory ?? "Uncategorized")
       .filter(Boolean);
 
