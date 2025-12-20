@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { plaidClient } from "@/lib/plaid";
+import { getPlaidClient } from "@/lib/plaid";
 
 type RefreshArgs = {
   bankItemId: string;
@@ -14,6 +14,7 @@ export async function refreshAccountBalances({
   bankItemId,
   accessToken,
 }: RefreshArgs) {
+  const plaidClient = getPlaidClient();
   const response = await plaidClient.accountsBalanceGet({
     access_token: accessToken,
   });

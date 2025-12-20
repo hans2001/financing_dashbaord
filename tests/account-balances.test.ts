@@ -13,7 +13,7 @@ vi.mock("@/lib/prisma", () => ({
 }));
 
 vi.mock("@/lib/plaid", () => ({
-  plaidClient: plaidClientMock,
+  getPlaidClient: () => plaidClientMock,
 }));
 
 describe("refreshAccountBalances", () => {

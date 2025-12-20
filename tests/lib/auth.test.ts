@@ -14,16 +14,17 @@ vi.mock("argon2", () => ({
 process.env.NEXTAUTH_SECRET = process.env.NEXTAUTH_SECRET ?? "vitest-secret";
 
 type AuthModule = typeof import("@/lib/auth");
+type AuthOptions = ReturnType<AuthModule["getAuthOptions"]>;
 type CredentialsAuthorize = NonNullable<
-  AuthModule["authOptions"]["providers"][number]["options"]["authorize"]
+  AuthOptions["providers"][number]["options"]["authorize"]
 >;
 
 let authorize: CredentialsAuthorize;
 
 describe("lib/auth credentials provider", () => {
   beforeAll(async () => {
-    const { authOptions } = await import("@/lib/auth");
-    const provider = authOptions.providers?.[0];
+    const { getAuthOptions } = await import("@/lib/auth");
+    const provider = getAuthOptions().providers?.[0];
     const authorizeFn = provider?.options?.authorize;
     if (!authorizeFn) {
       throw new Error("Credentials provider is missing");

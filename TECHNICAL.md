@@ -27,6 +27,12 @@ See the top of `README.md` for the required list of env vars.
 - `npm run build` — compiles the app for production.
 - `npm run lint` — runs ESLint across the project.
 
+## Local CI (GitHub Actions parity)
+- Prerequisites: Docker running and `act` installed (for example `brew install act`).
+- Run the full CI job locally: `npm run ci:local`.
+- Pass extra `act` flags when needed: `npm run ci:local -- --container-architecture linux/amd64`.
+- If `act` is missing, install it first; if Docker is stopped, start it and rerun the command.
+
 ## Next steps for production
 1. Set real Plaid + Postgres credentials and run `npx prisma migrate deploy`.
 2. Provision a Postgres database with a managed provider.

@@ -1,6 +1,17 @@
 import NextAuth from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { getAuthOptions } from "@/lib/auth";
 
-const handler = NextAuth(authOptions);
+type NextAuthHandler = ReturnType<typeof NextAuth>;
+type NextAuthRequest = Parameters<NextAuthHandler>[0];
 
-export { handler as GET, handler as POST };
+let cachedHandler: NextAuthHandler | null = null;
+
+const getHandler = (): NextAuthHandler => {
+  if (!cachedHandler) {
+    cachedHandler = NextAuth(getAuthOptions());
+  }
+  return cachedHandler;
+};
+
+export const GET = (request: NextAuthRequest) => getHandler()(request);
+export const POST = (request: NextAuthRequest) => getHandler()(request);

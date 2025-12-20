@@ -1,5 +1,5 @@
 import { jsonErrorResponse } from "@/lib/api-response";
-import { plaidClient } from "@/lib/plaid";
+import { getPlaidClient } from "@/lib/plaid";
 import { NextResponse } from "next/server";
 import { CountryCode, Products } from "plaid";
 import { getAuthenticatedUser, unauthorizedResponse } from "@/lib/server/session";
@@ -23,6 +23,7 @@ export async function POST() {
       return unauthorizedResponse();
     }
     const daysRequested = parseDaysRequested();
+    const plaidClient = getPlaidClient();
     const tokenResponse = await plaidClient.linkTokenCreate({
       user: { client_user_id: user.id },
       client_name:

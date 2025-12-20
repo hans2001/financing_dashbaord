@@ -95,7 +95,12 @@ export async function GET(request: Request) {
       }[]
     >(query);
 
-    const buckets = rawBuckets.map((row) => {
+    const buckets = rawBuckets.map(
+      (row: {
+        bucket: Date;
+        spend_total: DecimalLike | null;
+        income_total: DecimalLike | null;
+      }) => {
       const bucketDate = row.bucket ?? new Date();
       const isoDate = new Date(bucketDate).toISOString().slice(0, 10);
       return {
@@ -103,7 +108,8 @@ export async function GET(request: Request) {
         spent: Math.abs(decimalToNumber(row.spend_total)),
         income: decimalToNumber(row.income_total),
       };
-    });
+      },
+    );
 
     return NextServerResponse.json<TrendResponse>({ buckets });
   } catch (error) {

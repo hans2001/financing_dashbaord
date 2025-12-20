@@ -1,7 +1,7 @@
 import { jsonErrorResponse } from "@/lib/api-response";
 import { refreshAccountBalances } from "@/lib/account-balances";
 import { prisma } from "@/lib/prisma";
-import { plaidClient } from "@/lib/plaid";
+import { getPlaidClient } from "@/lib/plaid";
 import { NextResponse } from "next/server";
 import { getTransactionCategoryPath } from "@/lib/transaction-category";
 import { getAuthenticatedUser, unauthorizedResponse } from "@/lib/server/session";
@@ -102,6 +102,7 @@ export async function POST(request: Request) {
       return unauthorizedResponse();
     }
 
+    const plaidClient = getPlaidClient();
     const payload =
       (await request.json().catch(() => ({}))) as {
         bankItemId?: string;

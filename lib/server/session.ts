@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 
-import { authOptions } from "@/lib/auth";
+import { getAuthOptions } from "@/lib/auth";
 
 export type AuthenticatedUser = {
   id: string;
@@ -16,7 +16,7 @@ export async function getAuthenticatedUser() {
   }
 
   try {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession(getAuthOptions());
     if (!session?.user?.id) {
       return null;
     }

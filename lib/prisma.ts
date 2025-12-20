@@ -7,29 +7,39 @@ declare global {
   var pgPool: Pool | undefined;
 }
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL must be set when initializing PrismaClient");
+const databaseUrl = process.env.DATABASE_URL;
+let pool: Pool | undefined;
+let prismaClient: PrismaClient | undefined;
+
+if (databaseUrl) {
+  pool =
+    global.pgPool ??
+    new Pool({
+      connectionString: databaseUrl,
+    });
+
+  const adapter = new PrismaPg(pool);
+  prismaClient =
+    global.prisma ??
+    new PrismaClient({
+      adapter,
+      log:
+        process.env.NODE_ENV === "development"
+          ? ["query", "warn", "error"]
+          : ["warn", "error"],
+    });
 }
 
-const pool =
-  global.pgPool ??
-  new Pool({
-    connectionString: process.env.DATABASE_URL,
-  });
+// Delay missing env errors until runtime so builds don't fail on import.
+const prismaFallback = new Proxy({} as PrismaClient, {
+  get() {
+    throw new Error("DATABASE_URL must be set when initializing PrismaClient");
+  },
+});
 
-const adapter = new PrismaPg(pool);
+export const prisma = prismaClient ?? prismaFallback;
 
-export const prisma =
-  global.prisma ??
-  new PrismaClient({
-    adapter,
-    log:
-      process.env.NODE_ENV === "development"
-        ? ["query", "warn", "error"]
-        : ["warn", "error"],
-  });
-
-if (process.env.NODE_ENV !== "production") {
+if (process.env.NODE_ENV !== "production" && prismaClient && pool) {
   global.pgPool = pool;
-  global.prisma = prisma;
+  global.prisma = prismaClient;
 }

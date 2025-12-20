@@ -40,13 +40,15 @@ describe("lib/plaid client", () => {
 
   it("fails fast when credentials are missing", async () => {
     delete process.env.PLAID_CLIENT_ID;
-    await expect(import("@/lib/plaid")).rejects.toThrow(
+    const { getPlaidClient } = await import("@/lib/plaid");
+    expect(() => getPlaidClient()).toThrow(
       "PLAID_CLIENT_ID and PLAID_SECRET must be set",
     );
   });
 
   it("passes configured headers to PlaidApi", async () => {
-    const { plaidClient } = await import("@/lib/plaid");
+    const { getPlaidClient } = await import("@/lib/plaid");
+    const plaidClient = getPlaidClient();
 
     expect(configurationMock).toHaveBeenCalledWith({
       basePath: "https://sandbox.plaid.example",

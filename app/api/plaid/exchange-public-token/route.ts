@@ -1,7 +1,7 @@
 import { jsonErrorResponse } from "@/lib/api-response";
 import { refreshAccountBalances } from "@/lib/account-balances";
 import { prisma } from "@/lib/prisma";
-import { plaidClient } from "@/lib/plaid";
+import { getPlaidClient } from "@/lib/plaid";
 import { CountryCode } from "plaid";
 import { NextResponse } from "next/server";
 import {
@@ -26,6 +26,7 @@ export async function POST(request: Request) {
       return unauthorizedResponse();
     }
 
+    const plaidClient = getPlaidClient();
     const exchangeResponse = await plaidClient.itemPublicTokenExchange({
       public_token: publicToken,
     });

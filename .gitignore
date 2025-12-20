@@ -13,6 +13,7 @@
 # testing
 /coverage
 reports/
+.stryker-tmp/
 
 # next.js
 /.next/
