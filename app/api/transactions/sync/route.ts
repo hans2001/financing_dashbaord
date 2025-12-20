@@ -69,7 +69,10 @@ async function buildBatchLookups(transactions: PlaidTransaction[]) {
       ),
     ),
   );
-  const existingTransactions =
+  type ExistingTransaction = {
+    plaidTransactionId: string;
+  };
+  const existingTransactions: ExistingTransaction[] =
     transactionIds.length > 0
       ? await prisma.transaction.findMany({
           where: {
