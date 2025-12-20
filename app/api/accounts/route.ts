@@ -1,7 +1,7 @@
 import { jsonErrorResponse } from "@/lib/api-response";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { Prisma } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 import { getAuthenticatedUser, unauthorizedResponse } from "@/lib/server/session";
 
 export async function GET() {
