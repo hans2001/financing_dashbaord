@@ -1,7 +1,6 @@
 import { jsonErrorResponse } from "@/lib/api-response";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import type { Prisma } from "@prisma/client";
 import { getAuthenticatedUser, unauthorizedResponse } from "@/lib/server/session";
 
 export async function GET() {
@@ -25,20 +24,10 @@ export async function GET() {
       },
     });
 
+    type AccountWithBankItem = (typeof accounts)[number];
+
     return NextResponse.json({
-      accounts: accounts.map((account: {
-        id: string;
-        name: string;
-        officialName: string | null;
-        mask: string | null;
-        type: string;
-        subtype: string | null;
-        bankItem: { institutionName: string | null };
-        currentBalance: Prisma.Decimal | null;
-        availableBalance: Prisma.Decimal | null;
-        creditLimit: Prisma.Decimal | null;
-        balanceLastUpdated: Date | null;
-      }) => ({
+      accounts: accounts.map((account: AccountWithBankItem) => ({
         id: account.id,
         name: account.name,
         officialName: account.officialName,

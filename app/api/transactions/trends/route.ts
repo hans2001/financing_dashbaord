@@ -2,8 +2,8 @@ import { NextResponse as NextServerResponse } from "next/server";
 
 import { jsonErrorResponse } from "@/lib/api-response";
 import { prisma } from "@/lib/prisma";
-import { decimalToNumber } from "@/app/api/transactions/utils";
-import { Prisma } from "@prisma/client";
+import { DecimalLike, decimalToNumber } from "@/app/api/transactions/utils";
+import { join, sqltag as sql } from "@prisma/client/runtime/client";
 import { getAuthenticatedUser, unauthorizedResponse } from "@/lib/server/session";
 import { parseTransactionsQuery } from "@/app/api/transactions/query";
 
@@ -32,39 +32,37 @@ export async function GET(request: Request) {
     }
     const flow = data.flow ?? "all";
 
-    const whereConditions: Prisma.Sql[] = [
-      Prisma.sql`b."userId" = ${user.id}`,
-    ];
+    const whereConditions = [sql`b."userId" = ${user.id}`];
 
     if (data.accountIds.length > 0) {
       whereConditions.push(
-        Prisma.sql`a.id IN (${Prisma.join(
-          data.accountIds.map((accountId) => Prisma.sql`${accountId}`),
+        sql`a.id IN (${join(
+          data.accountIds.map((accountId) => sql`${accountId}`),
         )})`,
       );
     }
 
     if (data.startDate) {
       whereConditions.push(
-        Prisma.sql`"t"."date" >= ${data.startDate}`,
+        sql`"t"."date" >= ${data.startDate}`,
       );
     }
     if (data.endDate) {
-      whereConditions.push(Prisma.sql`"t"."date" <= ${data.endDate}`);
+      whereConditions.push(sql`"t"."date" <= ${data.endDate}`);
     }
 
     if (data.categories.length > 0) {
       whereConditions.push(
-        Prisma.sql`"t"."normalizedCategory" IN (${Prisma.join(
-          data.categories.map((category) => Prisma.sql`${category}`),
+        sql`"t"."normalizedCategory" IN (${join(
+          data.categories.map((category) => sql`${category}`),
         )})`,
       );
     }
 
     if (flow === "spending") {
-      whereConditions.push(Prisma.sql`"t"."amount" < 0`);
+      whereConditions.push(sql`"t"."amount" < 0`);
     } else if (flow === "inflow") {
-      whereConditions.push(Prisma.sql`"t"."amount" > 0`);
+      whereConditions.push(sql`"t"."amount" > 0`);
     }
 
     const [firstCondition, ...restConditions] = whereConditions;
@@ -73,10 +71,10 @@ export async function GET(request: Request) {
     }
     let whereClause = firstCondition;
     for (const condition of restConditions) {
-      whereClause = Prisma.sql`${whereClause} AND ${condition}`;
+      whereClause = sql`${whereClause} AND ${condition}`;
     }
 
-    const query = Prisma.sql`
+    const query = sql`
       SELECT
         date_trunc('day', "t"."date") AS bucket,
         SUM(CASE WHEN "t"."amount" < 0 THEN "t"."amount" ELSE 0 END) AS spend_total,
@@ -92,8 +90,8 @@ export async function GET(request: Request) {
     const rawBuckets = await prisma.$queryRaw<
       {
         bucket: Date;
-        spend_total: Prisma.Decimal | null;
-        income_total: Prisma.Decimal | null;
+        spend_total: DecimalLike | null;
+        income_total: DecimalLike | null;
       }[]
     >(query);
 

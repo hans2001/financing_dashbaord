@@ -3,7 +3,6 @@ import { refreshAccountBalances } from "@/lib/account-balances";
 import { prisma } from "@/lib/prisma";
 import { plaidClient } from "@/lib/plaid";
 import { NextResponse } from "next/server";
-import type { Prisma } from "@prisma/client";
 import { getTransactionCategoryPath } from "@/lib/transaction-category";
 import { getAuthenticatedUser, unauthorizedResponse } from "@/lib/server/session";
 
@@ -137,6 +136,14 @@ export async function POST(request: Request) {
       updated: 0,
     };
 
+    type TransactionUpsertArgs = Parameters<typeof prisma.transaction.upsert>[0];
+    type TransactionUpdatePayload = TransactionUpsertArgs["update"] & {
+      normalizedCategory: string;
+    };
+    type TransactionCreatePayload = TransactionUpsertArgs["create"] & {
+      normalizedCategory: string;
+    };
+
     for (const item of items) {
       let offset = 0;
       let latestRequestId: string | null = null;
@@ -210,9 +217,7 @@ export async function POST(request: Request) {
           const transactionName =
             tx.name ?? tx.merchant_name ?? "Unlabeled transaction";
 
-          const updatePayload: Prisma.TransactionUncheckedUpdateInput & {
-            normalizedCategory: string;
-          } = {
+          const updatePayload: TransactionUpdatePayload = {
             accountId: account.id,
             amount: normalizedAmount,
             category: tx.category ?? [],
@@ -225,9 +230,7 @@ export async function POST(request: Request) {
             normalizedCategory,
           };
 
-          const createPayload: Prisma.TransactionUncheckedCreateInput & {
-            normalizedCategory: string;
-          } = {
+          const createPayload: TransactionCreatePayload = {
             accountId: account.id,
             plaidTransactionId: transactionId,
             amount: normalizedAmount,
