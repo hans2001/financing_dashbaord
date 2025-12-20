@@ -3,7 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { ensureFamilyMember } from "@/lib/workspace-utils";
 import { NextResponse } from "next/server";
 import { getAuthenticatedUser, unauthorizedResponse } from "@/lib/server/session";
-import type { User } from "@prisma/client";
 
 export async function GET() {
   try {
@@ -12,6 +11,10 @@ export async function GET() {
     }
 
     const members = await prisma.user.findMany({
+      select: {
+        id: true,
+        displayName: true,
+      },
       orderBy: [
         { displayName: "asc" },
         { id: "asc" },
@@ -19,7 +22,7 @@ export async function GET() {
     });
 
     return NextResponse.json({
-      members: members.map((member: User) => ({
+      members: members.map((member) => ({
         id: member.id,
         displayName: member.displayName,
       })),
