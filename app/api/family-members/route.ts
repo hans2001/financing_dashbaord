@@ -10,7 +10,12 @@ export async function GET() {
       return unauthorizedResponse();
     }
 
-    const members = await prisma.user.findMany({
+    type FamilyMember = {
+      id: string;
+      displayName: string | null;
+    };
+
+    const members = (await prisma.user.findMany({
       select: {
         id: true,
         displayName: true,
@@ -19,10 +24,10 @@ export async function GET() {
         { displayName: "asc" },
         { id: "asc" },
       ],
-    });
+    })) as FamilyMember[];
 
     return NextResponse.json({
-      members: members.map((member) => ({
+      members: members.map((member: FamilyMember) => ({
         id: member.id,
         displayName: member.displayName,
       })),
