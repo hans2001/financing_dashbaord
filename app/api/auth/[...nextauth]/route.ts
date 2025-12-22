@@ -13,5 +13,11 @@ const getHandler = (): NextAuthHandler => {
   return cachedHandler;
 };
 
-export const GET = (request: NextAuthRequest) => getHandler()(request);
-export const POST = (request: NextAuthRequest) => getHandler()(request);
+export const GET = (
+  request: NextAuthRequest,
+  context: Parameters<NextAuthHandler>[1],
+) => getHandler()(request, context);
+export const POST = (
+  request: NextAuthRequest,
+  context: Parameters<NextAuthHandler>[1],
+) => getHandler()(request, context);

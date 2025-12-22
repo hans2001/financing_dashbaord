@@ -1,7 +1,8 @@
 import { spawnSync } from "node:child_process";
 
 const databaseUrl =
-  process.env.DATABASE_URL ?? "postgresql://localhost:5432/postgres";
+  process.env.DATABASE_URL ??
+  "postgresql://postgres:Hans13802704833!@db.davyddzkiqpktymqvbpz.supabase.co:5432/postgres";
 
 const result = spawnSync("prisma", ["generate"], {
   stdio: "inherit",

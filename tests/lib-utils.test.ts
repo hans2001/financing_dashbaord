@@ -3,7 +3,8 @@ import { describe, expect, it, vi } from "vitest";
 // Set DATABASE_URL before any imports that might load prisma
 // This prevents errors when demo-user.ts imports prisma.ts
 process.env.DATABASE_URL =
-  process.env.DATABASE_URL || "postgresql://localhost:5432/test";
+  process.env.DATABASE_URL ||
+  "postgresql://postgres:Hans13802704833!@db.davyddzkiqpktymqvbpz.supabase.co:5432/postgres";
 
 vi.mock("@prisma/client", () => {
   class PrismaClient {
