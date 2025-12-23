@@ -1,11 +1,9 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 
 export default function LoginPage() {
-  const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -32,7 +30,7 @@ export default function LoginPage() {
     });
 
     if (result?.ok) {
-      router.push(result.url ?? "/dashboard");
+      window.location.assign(result.url ?? "/dashboard");
       return;
     }
 

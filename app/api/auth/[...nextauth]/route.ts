@@ -6,6 +6,8 @@ type NextAuthRequest = Parameters<NextAuthHandler>[0];
 
 let cachedHandler: NextAuthHandler | null = null;
 
+export const runtime = "nodejs";
+
 const getHandler = (): NextAuthHandler => {
   if (!cachedHandler) {
     cachedHandler = NextAuth(getAuthOptions());

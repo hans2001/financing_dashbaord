@@ -4,8 +4,6 @@ import type { CallbacksOptions } from "next-auth";
 import type { JWT } from "next-auth/jwt";
 import type { NextAuthOptions } from "next-auth";
 
-import { prisma } from "@/lib/prisma";
-
 type AuthToken = JWT & {
   userId?: string;
   email?: string | null;
@@ -25,6 +23,17 @@ export const getAuthOptions = (): NextAuthOptions => {
   const nextAuthSecret = process.env.NEXTAUTH_SECRET;
   if (!nextAuthSecret) {
     throw new Error("NEXTAUTH_SECRET must be set to initialize authentication");
+  }
+
+  if (!process.env.NEXTAUTH_URL) {
+    const baseUrl =
+      process.env.APP_BASE_URL ??
+      (process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : undefined);
+    if (baseUrl) {
+      process.env.NEXTAUTH_URL = baseUrl;
+    }
   }
 
   cachedAuthOptions = {
@@ -47,6 +56,7 @@ export const getAuthOptions = (): NextAuthOptions => {
             return null;
           }
 
+          const { prisma } = await import("@/lib/prisma");
           const normalizedEmail = credentials.email.trim().toLowerCase();
           const user = await prisma.user.findFirst({
             where: { email: normalizedEmail },
